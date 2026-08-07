@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive_layout.dart';
+import '../../core/utils/mock_control_helper.dart';
 import 'widgets/web_sidebar.dart';
 import 'widgets/top_app_bar.dart';
 import '../dashboard/dashboard_view.dart';
 import '../devices/devices_view.dart';
 import '../analytics/analytics_view.dart';
 import '../alerts/alerts_view.dart';
+import '../settings/settings_view.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -22,8 +24,8 @@ class _MainLayoutState extends State<MainLayout> {
     const DashboardView(),
     const DevicesView(),
     const AnalyticsView(),
-    const AlertsView(), // <-- Ubah baris ini dari Center(child: Text(...)) menjadi AlertsView()
-    const Center(child: Text("Settings Page")),
+    const AlertsView(),
+    const SettingsView(),
   ];
 
   void _onItemTapped(int index) {
@@ -57,7 +59,16 @@ class _MainLayoutState extends State<MainLayout> {
         body: SafeArea(child: _pages[_selectedIndex]),
         floatingActionButton: _selectedIndex == 1
             ? FloatingActionButton(
-                onPressed: () {},
+                onPressed: () {
+                  MockControlHelper.showSimulationDialog(
+                    context,
+                    title: 'Tambah Perangkat Baru',
+                    description:
+                        'Di lahan, fitur ini akan mendaftarkan node sensor ESP32 baru ke jaringan melalui BLE pairing. '
+                        'Perangkat akan otomatis terkalibrasi dan mulai mengirim data ke server.',
+                    icon: Icons.add_circle_outline,
+                  );
+                },
                 backgroundColor: AppTheme.primaryColor,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30)),

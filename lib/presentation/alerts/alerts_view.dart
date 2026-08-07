@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/mock_control_helper.dart';
 
-class AlertsView extends StatelessWidget {
+class AlertsView extends StatefulWidget {
   const AlertsView({super.key});
+
+  @override
+  State<AlertsView> createState() => _AlertsViewState();
+}
+
+class _AlertsViewState extends State<AlertsView> {
+  bool _criticalDismissed = false;
+  bool _warningDismissed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +57,14 @@ class AlertsView extends StatelessWidget {
               Row(
                 children: [
                   OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      MockControlHelper.showSimulationSnackBar(
+                        context,
+                        featureName: 'Filter Notifikasi',
+                        description:
+                            'Di lahan, Anda dapat memfilter notifikasi berdasarkan tingkat keparahan (Critical, Warning, Info) dan sektor lahan.',
+                      );
+                    },
                     icon: const Icon(Icons.filter_list,
                         size: 16, color: Colors.black87),
                     label: const Text("Filter",
@@ -64,7 +80,14 @@ class AlertsView extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      MockControlHelper.showSimulationSnackBar(
+                        context,
+                        featureName: 'Tandai Semua Dibaca',
+                        description:
+                            'Semua notifikasi akan ditandai sebagai sudah dibaca dan disinkronkan ke server.',
+                      );
+                    },
                     child: const Text("Mark All Read",
                         style: TextStyle(
                             color: AppTheme.primaryColor,
@@ -77,15 +100,28 @@ class AlertsView extends StatelessWidget {
           const SizedBox(height: 32),
 
           // ROW 1: Full Width Critical Alert
-          _buildDesktopCriticalCard(),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _criticalDismissed
+                ? const SizedBox.shrink()
+                : _buildDesktopCriticalCard(),
+          ),
 
-          const SizedBox(height: 24),
+          if (!_criticalDismissed) const SizedBox(height: 24),
 
           // ROW 2: Warning (60%) & Info (40%)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 6, child: _buildDesktopWarningCard()),
+              Expanded(
+                flex: 6,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _warningDismissed
+                      ? const SizedBox.shrink()
+                      : _buildDesktopWarningCard(),
+                ),
+              ),
               const SizedBox(width: 24),
               Expanded(flex: 4, child: _buildDesktopInfoCard()),
             ],
@@ -186,7 +222,17 @@ class AlertsView extends StatelessWidget {
                 Row(
                   children: [
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        setState(() {
+                          _criticalDismissed = true;
+                        });
+                        MockControlHelper.showSimulationSnackBar(
+                          context,
+                          featureName: 'Dismiss Alert',
+                          description:
+                              'Alert telah di-dismiss. Di lahan, status ini akan disinkronkan ke server dan dihapus dari antrian notifikasi.',
+                        );
+                      },
                       style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red.shade700,
                           side: BorderSide(color: Colors.red.shade700),
@@ -198,7 +244,15 @@ class AlertsView extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        MockControlHelper.showSimulationDialog(
+                          context,
+                          title: 'Aktivasi Pompa Irigasi',
+                          description:
+                              'Di lahan, tombol ini akan mengirim perintah otomatis ke ESP32 melalui MQTT untuk mengaktifkan pompa irigasi di Sektor 7. Sistem akan berjalan selama 15 menit atau hingga kelembaban tanah mencapai 25%.',
+                          icon: Icons.water_drop,
+                        );
+                      },
                       icon: const Icon(Icons.power_settings_new,
                           size: 16, color: Colors.white),
                       label: const Text("Activate Pump",
@@ -265,17 +319,36 @@ class AlertsView extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Text("View Graph",
-                        style: TextStyle(
-                            color: Colors.green.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12)),
+                    GestureDetector(
+                      onTap: () {
+                        MockControlHelper.showSimulationSnackBar(
+                          context,
+                          featureName: 'Grafik Suhu',
+                          description: 'Di lahan, grafik real-time suhu greenhouse akan ditampilkan dari data sensor DHT22.',
+                        );
+                      },
+                      child: Text("View Graph",
+                          style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12)),
+                    ),
                     const SizedBox(width: 24),
-                    Text("Mark Read",
-                        style: TextStyle(
-                            color: Colors.grey.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12)),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => _warningDismissed = true);
+                        MockControlHelper.showSimulationSnackBar(
+                          context,
+                          featureName: 'Tandai Dibaca',
+                          description: 'Warning telah ditandai sudah dibaca dan disinkronkan ke server.',
+                        );
+                      },
+                      child: Text("Mark Read",
+                          style: TextStyle(
+                              color: Colors.grey.shade800,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12)),
+                    ),
                   ],
                 )
               ],
@@ -403,7 +476,14 @@ class AlertsView extends StatelessWidget {
         actions: [
           IconButton(
               icon: const Icon(Icons.filter_list, color: Colors.black87),
-              onPressed: () {}),
+              onPressed: () {
+                MockControlHelper.showSimulationSnackBar(
+                  context,
+                  featureName: 'Filter Notifikasi',
+                  description:
+                      'Anda dapat memfilter notifikasi berdasarkan tingkat keparahan dan zona lahan.',
+                );
+              }),
         ],
       ),
       body: SingleChildScrollView(
@@ -426,32 +506,71 @@ class AlertsView extends StatelessWidget {
 
             // List of Cards
             _mobileCriticalCard(
-                "Moisture Levels Critical",
-                "Zone A (North Field) soil moisture dropped below 15%. Immediate irrigation required to prevent crop stress.",
-                "2 mins ago",
-                Icons.water_drop,
-                "Activate Pump A",
-                Icons.power_settings_new),
+              "Moisture Levels Critical",
+              "Zone A (North Field) soil moisture dropped below 15%. Immediate irrigation required to prevent crop stress.",
+              "2 mins ago",
+              Icons.water_drop,
+              "Activate Pump A",
+              Icons.power_settings_new,
+              onPrimaryPressed: () {
+                MockControlHelper.showSimulationDialog(
+                  context,
+                  title: 'Aktivasi Pompa Irigasi',
+                  description:
+                      'Di lahan, tombol ini akan mengirim perintah otomatis ke ESP32 melalui MQTT untuk mengaktifkan pompa irigasi di Pompa A di Zona Utara. Sistem akan berjalan selama 15 menit atau hingga kelembaban tanah mencapai 25%.',
+                  icon: Icons.water_drop,
+                );
+              },
+            ),
             const SizedBox(height: 16),
             _mobileCriticalCard(
-                "Greenhouse Temp Spike",
-                "Greenhouse 3 temperature exceeded 35°C. Cooling systems failed to respond.",
-                "15 mins ago",
-                Icons.thermostat,
-                "Force Vents Open",
-                Icons.ac_unit),
+              "Greenhouse Temp Spike",
+              "Greenhouse 3 temperature exceeded 35°C. Cooling systems failed to respond.",
+              "15 mins ago",
+              Icons.thermostat,
+              "Force Vents Open",
+              Icons.ac_unit,
+              onPrimaryPressed: () {
+                MockControlHelper.showSimulationDialog(
+                  context,
+                  title: 'Buka Ventilasi Greenhouse',
+                  description:
+                      'Di lahan, perintah ini akan membuka ventilasi otomatis di Greenhouse 3 melalui aktuator servo yang terhubung ke ESP32. Sistem pendinginan akan aktif sampai suhu turun di bawah 30°C.',
+                  icon: Icons.ac_unit,
+                );
+              },
+            ),
             const SizedBox(height: 16),
             _mobileWarningCard(
-                "Low Battery: Node 42",
-                "Sensor node 42 in Sector B is reporting 15% battery remaining.",
-                "1 hour ago",
-                "Acknowledge"),
+              "Low Battery: Node 42",
+              "Sensor node 42 in Sector B is reporting 15% battery remaining.",
+              "1 hour ago",
+              "Acknowledge",
+              onPressed: () {
+                MockControlHelper.showSimulationSnackBar(
+                  context,
+                  featureName: 'Acknowledge Alert',
+                  description:
+                      'Alert telah di-acknowledge. Tim maintenance akan menerima notifikasi untuk pengecekan baterai Node 42.',
+                );
+              },
+            ),
             const SizedBox(height: 16),
             _mobileWarningCard(
-                "Irregular Flow Rate",
-                "Main line flow rate is 10% below expected levels. Possible minor leak or blockage.",
-                "3 hours ago",
-                "Schedule Inspection"),
+              "Irregular Flow Rate",
+              "Main line flow rate is 10% below expected levels. Possible minor leak or blockage.",
+              "3 hours ago",
+              "Schedule Inspection",
+              onPressed: () {
+                MockControlHelper.showSimulationDialog(
+                  context,
+                  title: 'Jadwalkan Inspeksi',
+                  description:
+                      'Di lahan, fitur ini akan membuat jadwal inspeksi otomatis dan mengirim notifikasi ke tim lapangan untuk memeriksa jalur pipa utama.',
+                  icon: Icons.calendar_month,
+                );
+              },
+            ),
             const SizedBox(height: 16),
             _mobileInfoCard(
                 "System Update Complete",
@@ -496,7 +615,8 @@ class AlertsView extends StatelessWidget {
   }
 
   Widget _mobileCriticalCard(String title, String desc, String time,
-      IconData bgIcon, String btnText, IconData btnIcon) {
+      IconData bgIcon, String btnText, IconData btnIcon,
+      {VoidCallback? onPrimaryPressed}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -553,7 +673,7 @@ class AlertsView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: onPrimaryPressed ?? () {},
                         icon: Icon(btnIcon, color: Colors.white, size: 18),
                         label: Text(btnText,
                             style: const TextStyle(
@@ -568,7 +688,14 @@ class AlertsView extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        MockControlHelper.showSimulationSnackBar(
+                          context,
+                          featureName: 'Opsi Lanjutan',
+                          description:
+                              'Menu ini akan menampilkan opsi tambahan seperti eskalasi ke tim lapangan, penjadwalan maintenance, dan riwayat alert.',
+                        );
+                      },
                       style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               vertical: 14, horizontal: 0),
@@ -589,7 +716,8 @@ class AlertsView extends StatelessWidget {
   }
 
   Widget _mobileWarningCard(
-      String title, String desc, String time, String btnText) {
+      String title, String desc, String time, String btnText,
+      {VoidCallback? onPressed}) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -628,7 +756,7 @@ class AlertsView extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: onPressed ?? () {},
               style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(

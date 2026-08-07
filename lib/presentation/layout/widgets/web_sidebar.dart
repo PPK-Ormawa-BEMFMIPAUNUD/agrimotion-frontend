@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/mock_control_helper.dart';
 
 class WebSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -45,7 +46,16 @@ class WebSidebar extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  MockControlHelper.showSimulationDialog(
+                    context,
+                    title: 'Tambah Perangkat Baru',
+                    description:
+                        'Di lahan, fitur ini akan mendaftarkan node sensor ESP32 baru ke jaringan melalui BLE pairing. '
+                        'Perangkat akan otomatis terkalibrasi dan mulai mengirim data ke server.',
+                    icon: Icons.add_circle_outline,
+                  );
+                },
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text("Add Device",
                     style: TextStyle(color: Colors.white)),

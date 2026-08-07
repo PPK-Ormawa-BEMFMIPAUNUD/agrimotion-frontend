@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/mock_control_helper.dart';
 
 class TopAppBar extends StatelessWidget {
   const TopAppBar({super.key});
@@ -32,9 +33,32 @@ class TopAppBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.help_outline)),
           IconButton(
-              onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+            onPressed: () {
+              MockControlHelper.showSimulationDialog(
+                context,
+                title: 'Bantuan & Panduan',
+                description:
+                    'AGRI-MOTION adalah sistem pemantauan IoT presisi untuk pertanian. '
+                    'Dashboard menampilkan data real-time dari sensor ESP32 di lapangan. '
+                    'Gunakan menu navigasi untuk mengakses perangkat, analitik, notifikasi, dan pengaturan.',
+                icon: Icons.help_outline,
+              );
+            },
+            icon: const Icon(Icons.help_outline),
+          ),
+          IconButton(
+            onPressed: () {
+              MockControlHelper.showSimulationSnackBar(
+                context,
+                featureName: 'Pusat Notifikasi',
+                description:
+                    'Di lahan, panel ini akan menampilkan notifikasi real-time dari semua sensor — '
+                    'termasuk peringatan kelembaban rendah, suhu tinggi, dan status baterai perangkat.',
+              );
+            },
+            icon: const Icon(Icons.notifications_none),
+          ),
           const SizedBox(width: 8),
           const CircleAvatar(
             radius: 16,

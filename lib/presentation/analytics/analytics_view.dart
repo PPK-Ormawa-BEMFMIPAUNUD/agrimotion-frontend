@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/mock_control_helper.dart';
 import 'widgets/dual_axis_chart.dart';
 
-class AnalyticsView extends StatelessWidget {
+class AnalyticsView extends StatefulWidget {
   const AnalyticsView({super.key});
+
+  @override
+  State<AnalyticsView> createState() => _AnalyticsViewState();
+}
+
+class _AnalyticsViewState extends State<AnalyticsView> {
+  String _selectedPeriod = 'Month';
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +41,11 @@ class AnalyticsView extends StatelessWidget {
   // 1. HEADER SECTION
   // ==========================================================================
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        const Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 700;
+
+        final titleColumn = const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Historical Data Analysis",
@@ -49,10 +57,13 @@ class AnalyticsView extends StatelessWidget {
             Text("Review sensor trends and export compliance reports.",
                 style: TextStyle(color: Colors.grey, fontSize: 14)),
           ],
-        ),
-        Row(
+        );
+
+        final actionRow = Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            // Segmented Control (Day/Week/Month)
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
@@ -60,26 +71,33 @@ class AnalyticsView extends StatelessWidget {
                 color: Colors.white,
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildSegmentButton("Day", false),
+                  _buildSegmentButton("Day", _selectedPeriod == 'Day'),
                   Container(width: 1, height: 20, color: Colors.grey.shade300),
-                  _buildSegmentButton("Week", false),
+                  _buildSegmentButton("Week", _selectedPeriod == 'Week'),
                   Container(width: 1, height: 20, color: Colors.grey.shade300),
-                  _buildSegmentButton("Month", true), // State aktif
+                  _buildSegmentButton("Month", _selectedPeriod == 'Month'),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            // Export Button
             OutlinedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                MockControlHelper.showSimulationDialog(
+                  context,
+                  title: 'Ekspor Laporan Data',
+                  description:
+                      'Di lahan, fitur ini akan menghasilkan laporan CSV/PDF dari data historis sensor dan mengirimnya ke email terdaftar. Laporan mencakup tren kelembaban, suhu, dan penggunaan air.',
+                  icon: Icons.download,
+                );
+              },
               icon: const Icon(Icons.download, size: 16, color: Colors.black87),
               label: const Text("Export Report",
                   style: TextStyle(
                       color: Colors.black87, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
                 side: BorderSide(color: Colors.grey.shade300),
@@ -87,14 +105,42 @@ class AnalyticsView extends StatelessWidget {
               ),
             )
           ],
-        )
-      ],
+        );
+
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titleColumn,
+              const SizedBox(height: 16),
+              actionRow,
+            ],
+          );
+        } else {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(child: titleColumn),
+              const SizedBox(width: 16),
+              actionRow,
+            ],
+          );
+        }
+      },
     );
   }
 
   Widget _buildSegmentButton(String text, bool isActive) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        setState(() => _selectedPeriod = text);
+        MockControlHelper.showSimulationSnackBar(
+          context,
+          featureName: 'Periode $text',
+          description: 'Data historis akan dimuat untuk periode $text. Di lahan, grafik akan menampilkan data real-time dari database sensor.',
+        );
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -160,13 +206,17 @@ class AnalyticsView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title,
-                  style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(title,
+                    style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+              ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
@@ -177,22 +227,26 @@ class AnalyticsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(mainValue,
-                  style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87)),
-              if (valueSub.isNotEmpty)
-                Text(valueSub,
-                    style: TextStyle(
-                        fontSize: 18,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(mainValue,
+                    style: const TextStyle(
+                        fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade500)),
-            ],
+                        color: Colors.black87)),
+                if (valueSub.isNotEmpty)
+                  Text(valueSub,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade500)),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -208,18 +262,22 @@ class AnalyticsView extends StatelessWidget {
               else
                 const Icon(Icons.horizontal_rule, color: Colors.grey, size: 16),
               const SizedBox(width: 6),
-              Text(subtitle,
-                  style: TextStyle(
-                      color: isStatusPoint
-                          ? Colors.grey.shade700
-                          : (isPositiveTrend
-                              ? Colors.green
-                              : (isPositiveIcon == false &&
-                                      subtitle.contains('-')
-                                  ? Colors.red
-                                  : Colors.grey)),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600)),
+              Expanded(
+                child: Text(subtitle,
+                    style: TextStyle(
+                        color: isStatusPoint
+                            ? Colors.grey.shade700
+                            : (isPositiveTrend
+                                ? Colors.green
+                                : (isPositiveIcon == false &&
+                                        subtitle.contains('-')
+                                    ? Colors.red
+                                    : Colors.grey)),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+              ),
             ],
           ),
         ],
@@ -264,18 +322,22 @@ class AnalyticsView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Moisture & Temperature Correlation",
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87)),
-                  SizedBox(height: 4),
-                  Text("30-day historical trend across Sector A.",
-                      style: TextStyle(fontSize: 13, color: Colors.grey)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text("Moisture & Temperature Correlation",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2),
+                    SizedBox(height: 4),
+                    Text("30-day historical trend across Sector A.",
+                        style: TextStyle(fontSize: 13, color: Colors.grey)),
+                  ],
+                ),
               ),
               Icon(Icons.more_vert, color: Colors.grey.shade600),
             ],
@@ -397,76 +459,117 @@ class AnalyticsView extends StatelessWidget {
           // Table Header Actions
           Padding(
             padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Sensor Log Data",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87)),
-                SizedBox(
-                  width: 200,
-                  height: 36,
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Filter node ID...",
-                      hintStyle:
-                          TextStyle(fontSize: 13, color: Colors.grey.shade400),
-                      prefixIcon: Icon(Icons.filter_list,
-                          size: 16, color: Colors.grey.shade500),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(color: Colors.grey.shade300)),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 500;
+                if (isMobile) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Sensor Log Data",
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 36,
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: "Filter node ID...",
+                            hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                            prefixIcon: Icon(Icons.filter_list, size: 16, color: Colors.grey.shade500),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(color: Colors.grey.shade300)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide(color: Colors.grey.shade300)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Expanded(
+                      child: Text("Sensor Log Data",
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87)),
                     ),
-                  ),
-                )
-              ],
+                    SizedBox(
+                      width: 200,
+                      height: 36,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: "Filter node ID...",
+                          hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                          prefixIcon: Icon(Icons.filter_list, size: 16, color: Colors.grey.shade500),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(color: Colors.grey.shade300)),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Divider(height: 1, color: Colors.grey.shade200),
 
-          // Table Data
-          Padding(
+          // Table Data — horizontally scrollable on narrow screens
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1.5),
-                2: FlexColumnWidth(1.5),
-                3: FlexColumnWidth(1.5),
-                4: FlexColumnWidth(1.5),
-                5: FlexColumnWidth(1.5),
-              },
-              children: [
-                // Header Row
-                TableRow(
-                  children: [
-                    _th("TIMESTAMP"),
-                    _th("NODE ID"),
-                    _th("SECTOR"),
-                    _th("MOISTURE (%)"),
-                    _th("TEMP (°C)"),
-                    _th("STATUS"),
-                  ],
-                ),
-                // Data Rows
-                _tdRow("Oct 24, 08:00 AM", "ND-042", "Sector A", "41.2", "22.4",
-                    "Normal", true),
-                _tdRow("Oct 24, 08:00 AM", "ND-043", "Sector B", "38.5", "23.1",
-                    "Normal", true),
-                _tdRow("Oct 24, 07:45 AM", "ND-088", "Sector C", "18.4", "25.6",
-                    "Low Moisture", false),
-                _tdRow("Oct 24, 07:30 AM", "ND-012", "Sector A", "43.0", "21.8",
-                    "Normal", true,
-                    isLast: true),
-              ],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 600),
+              child: Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(1.5),
+                  2: FlexColumnWidth(1.5),
+                  3: FlexColumnWidth(1.5),
+                  4: FlexColumnWidth(1.5),
+                  5: FlexColumnWidth(1.5),
+                },
+                children: [
+                  // Header Row
+                  TableRow(
+                    children: [
+                      _th("TIMESTAMP"),
+                      _th("NODE ID"),
+                      _th("SECTOR"),
+                      _th("MOISTURE (%)"),
+                      _th("TEMP (°C)"),
+                      _th("STATUS"),
+                    ],
+                  ),
+                  // Data Rows
+                  _tdRow("Oct 24, 08:00 AM", "ND-042", "Sector A", "41.2", "22.4",
+                      "Normal", true),
+                  _tdRow("Oct 24, 08:00 AM", "ND-043", "Sector B", "38.5", "23.1",
+                      "Normal", true),
+                  _tdRow("Oct 24, 07:45 AM", "ND-088", "Sector C", "18.4", "25.6",
+                      "Low Moisture", false),
+                  _tdRow("Oct 24, 07:30 AM", "ND-012", "Sector A", "43.0", "21.8",
+                      "Normal", true,
+                      isLast: true),
+                ],
+              ),
             ),
           ),
 
@@ -566,17 +669,26 @@ class AnalyticsView extends StatelessWidget {
   }
 
   Widget _pageBtn(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(6),
+    return InkWell(
+      onTap: () {
+        MockControlHelper.showSimulationSnackBar(
+          context,
+          featureName: 'Navigasi Halaman',
+          description: 'Di lahan, tabel akan memuat halaman data berikutnya dari database sensor.',
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500)),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500)),
     );
   }
 }

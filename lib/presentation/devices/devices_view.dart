@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/mock_control_helper.dart';
 
-class DevicesView extends StatelessWidget {
+class DevicesView extends StatefulWidget {
   const DevicesView({super.key});
 
+  @override
+  State<DevicesView> createState() => _DevicesViewState();
+}
+
+class _DevicesViewState extends State<DevicesView> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -58,29 +64,38 @@ class DevicesView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Manajemen Perangkat",
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text("Pantau dan kelola semua node sensor IoT di lapangan.",
-                      style: TextStyle(color: Colors.grey, fontSize: 14)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text("Manajemen Perangkat",
+                        style:
+                            TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis),
+                    SizedBox(height: 4),
+                    Text("Pantau dan kelola semua node sensor IoT di lapangan.",
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2),
+                  ],
+                ),
               ),
-              ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                label: const Text("Tambah Perangkat",
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8))),
+              const SizedBox(width: 16),
+              Flexible(
+                child: ElevatedButton.icon(
+                  onPressed: () => MockControlHelper.showSimulationDialog(context, title: 'Tambah Perangkat Baru', description: 'Di lahan, fitur ini akan mendaftarkan node sensor ESP32 baru ke jaringan melalui BLE pairing. Perangkat akan otomatis terkalibrasi dan mulai mengirim data ke server.', icon: Icons.add_circle_outline),
+                  icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                  label: const Text("Tambah Perangkat",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8))),
+                ),
               ),
             ],
           ),
@@ -233,7 +248,7 @@ class DevicesView extends StatelessWidget {
                         color: isOnline ? Colors.grey : Colors.red)),
                 if (isOnline)
                   TextButton.icon(
-                      onPressed: () {},
+                      onPressed: () => MockControlHelper.showSimulationDialog(context, title: 'Konfigurasi Perangkat', description: 'Fitur ini memungkinkan Anda mengatur interval pengiriman data, sensitivitas sensor, dan parameter kalibrasi perangkat ESP32 di lapangan melalui koneksi MQTT.', icon: Icons.settings),
                       icon: const Icon(Icons.settings,
                           size: 14, color: AppTheme.primaryColor),
                       label: const Text("Konfigurasi",
@@ -243,7 +258,7 @@ class DevicesView extends StatelessWidget {
                               fontWeight: FontWeight.bold)))
                 else
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => MockControlHelper.showSimulationSnackBar(context, featureName: 'Ping Perangkat', description: 'Di lahan, perintah ping akan dikirim ke node sensor untuk memeriksa konektivitas. Respons biasanya diterima dalam 2-5 detik melalui protokol MQTT.'),
                     icon: const Icon(Icons.refresh,
                         size: 14, color: Colors.white),
                     label: const Text("Ping",
@@ -363,9 +378,15 @@ class DevicesView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(data['name'],
+              Expanded(
+                child: Text(
+                  data['name'],
                   style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold)),
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               _buildStatusChip(isOnline),
             ],
           ),
@@ -375,8 +396,13 @@ class DevicesView extends StatelessWidget {
               Icon(Icons.location_on_outlined,
                   size: 16, color: Colors.grey.shade600),
               const SizedBox(width: 6),
-              Text(data['location'],
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+              Expanded(
+                child: Text(
+                  data['location'],
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
