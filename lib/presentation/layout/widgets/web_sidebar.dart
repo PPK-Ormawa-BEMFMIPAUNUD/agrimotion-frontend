@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/mock_control_helper.dart';
 
 class WebSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -36,38 +35,10 @@ class WebSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _sidebarItem(Icons.dashboard, "Dashboard", 0),
-          _sidebarItem(Icons.sensors, "Devices", 1),
-          _sidebarItem(Icons.analytics, "Analytics", 2),
-          _sidebarItem(Icons.notifications, "Alerts", 3),
-          _sidebarItem(Icons.settings, "Settings", 4),
+          _sidebarItem(Icons.analytics, "Analytics", 1),
+          _sidebarItem(Icons.notifications, "Alerts", 2),
+          _sidebarItem(Icons.settings, "Settings", 3),
           const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  MockControlHelper.showSimulationDialog(
-                    context,
-                    title: 'Tambah Perangkat Baru',
-                    description:
-                        'Di lahan, fitur ini akan mendaftarkan node sensor ESP32 baru ke jaringan melalui BLE pairing. '
-                        'Perangkat akan otomatis terkalibrasi dan mulai mengirim data ke server.',
-                    icon: Icons.add_circle_outline,
-                  );
-                },
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text("Add Device",
-                    style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

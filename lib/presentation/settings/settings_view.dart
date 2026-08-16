@@ -222,7 +222,7 @@ class _SettingsViewState extends State<SettingsView> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: const Color(0xFF0F5A34),
+          activeColor: const Color(0xFF0F5A34),
         ),
       ],
     );
@@ -409,7 +409,7 @@ class _SettingsViewState extends State<SettingsView> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: const Color(0xFF0F5A34),
+          activeColor: const Color(0xFF0F5A34),
         ),
       ],
     );

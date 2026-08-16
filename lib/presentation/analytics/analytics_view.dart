@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:file_saver/file_saver.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/mock_control_helper.dart';
+import '../../core/models/sensor_data.dart';
+import '../../core/services/sensor_service.dart';
 import 'widgets/dual_axis_chart.dart';
 
 class AnalyticsView extends StatefulWidget {
@@ -12,10 +17,123 @@ class AnalyticsView extends StatefulWidget {
 
 class _AnalyticsViewState extends State<AnalyticsView> {
   String _selectedPeriod = 'Month';
+  final SensorService _sensorService = SensorService();
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<SensorData> _sensorDataList = [];
+  double _avgMoisture = 0.0;
+  double _meanTemp = 0.0;
+  double _avgNpk = 0.0;
+  int _activeSensors = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final data = await _sensorService.fetchTelemetryList(limit: 50);
+      
+      double totalMoisture = 0;
+      double totalTemp = 0;
+      double totalNpk = 0;
+      int npkCount = 0;
+      Set<String> uniqueDevices = {};
+
+      for (var item in data) {
+        totalMoisture += item.soilMoisture ?? 0;
+        totalTemp += item.temperature ?? 0;
+        if (item.npkN != null || item.npkP != null || item.npkK != null) {
+           totalNpk += (item.npkN ?? 0) + (item.npkP ?? 0) + (item.npkK ?? 0);
+           npkCount++;
+        }
+        if (item.deviceId != null || item.deviceCode != null) {
+          uniqueDevices.add(item.deviceId ?? item.deviceCode!);
+        }
+      }
+
+      setState(() {
+        _sensorDataList = data;
+        if (data.isNotEmpty) {
+          _avgMoisture = totalMoisture / data.length;
+          _meanTemp = totalTemp / data.length;
+        }
+        if (npkCount > 0) {
+           _avgNpk = (totalNpk / 3) / npkCount;
+        }
+        _activeSensors = uniqueDevices.length;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _exportData() async {
+    if (_sensorDataList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada data untuk diekspor')),
+      );
+      return;
+    }
+
+    String csv = "TIMESTAMP,NODE_ID,FARM_ID,MOISTURE,TEMPERATURE,PH,NPK\n";
+    for (var item in _sensorDataList) {
+       csv += "${item.timestamp.toIso8601String()},${item.deviceCode ?? item.deviceId ?? ''},${item.farmId ?? ''},${item.soilMoisture ?? ''},${item.temperature ?? ''},${item.ph ?? ''},${item.npkDisplay}\n";
+    }
+
+    try {
+      final String fileName = 'agrimotion_report_${DateTime.now().millisecondsSinceEpoch}';
+      final bytes = Uint8List.fromList(utf8.encode(csv));
+
+      final path = await FileSaver.instance.saveFile(
+        name: fileName,
+        bytes: bytes,
+        ext: 'csv',
+        mimeType: MimeType.csv,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(path.isNotEmpty 
+                ? 'Laporan CSV berhasil disimpan ke:\n$path' 
+                : 'Laporan CSV berhasil diunduh!'),
+            duration: const Duration(seconds: 5),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan file: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _sensorService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Menggunakan LayoutBuilder agar tetap responsif jika dibuka di layar kecil
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -25,11 +143,17 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
-              _buildKpiRow(constraints.maxWidth),
-              const SizedBox(height: 24),
-              _buildChartsRow(constraints.maxWidth),
-              const SizedBox(height: 24),
-              _buildDataTable(),
+              if (_isLoading)
+                const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+              else if (_errorMessage != null)
+                Center(child: Padding(padding: EdgeInsets.all(40), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))))
+              else ...[
+                _buildKpiRow(constraints.maxWidth),
+                const SizedBox(height: 24),
+                _buildChartsRow(constraints.maxWidth),
+                const SizedBox(height: 24),
+                _buildDataTable(),
+              ],
             ],
           ),
         );
@@ -82,15 +206,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               ),
             ),
             OutlinedButton.icon(
-              onPressed: () {
-                MockControlHelper.showSimulationDialog(
-                  context,
-                  title: 'Ekspor Laporan Data',
-                  description:
-                      'Di lahan, fitur ini akan menghasilkan laporan CSV/PDF dari data historis sensor dan mengirimnya ke email terdaftar. Laporan mencakup tren kelembaban, suhu, dan penggunaan air.',
-                  icon: Icons.download,
-                );
-              },
+              onPressed: _exportData,
               icon: const Icon(Icons.download, size: 16, color: Colors.black87),
               label: const Text("Export Report",
                   style: TextStyle(
@@ -171,17 +287,17 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       spacing: 24,
       runSpacing: 24,
       children: [
-        _kpiCard(cardWidth, "AVG SOIL MOISTURE", "42%", "+2.4% vs last month",
+        _kpiCard(cardWidth, "AVG SOIL MOISTURE", "${_avgMoisture.toStringAsFixed(1)}%", "Current average",
             Icons.water_drop_outlined, true, true),
-        _kpiCard(cardWidth, "MEAN TEMPERATURE", "24°C", "Stable vs last month",
+        _kpiCard(cardWidth, "MEAN TEMPERATURE", "${_meanTemp.toStringAsFixed(1)}°C", "Current average",
             Icons.thermostat_outlined, false, true,
             iconColor: Colors.red),
-        _kpiCard(cardWidth, "NUTRIENT NPK INDEX", "8.4/10",
-            "-0.8 vs last month", Icons.science_outlined, false, false,
-            valueSub: "/10"),
-        _kpiCard(cardWidth, "ACTIVE SENSORS", "124/128", "97% Network Health",
+        _kpiCard(cardWidth, "NUTRIENT NPK INDEX", _avgNpk.toStringAsFixed(1),
+            "Current average", Icons.science_outlined, false, false,
+            valueSub: ""),
+        _kpiCard(cardWidth, "ACTIVE SENSORS", "$_activeSensors", "Detected nodes",
             Icons.sensors, true, true,
-            valueSub: "/128", isStatusPoint: true),
+            valueSub: "", isStatusPoint: true),
       ],
     );
   }
@@ -559,15 +675,25 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                     ],
                   ),
                   // Data Rows
-                  _tdRow("Oct 24, 08:00 AM", "ND-042", "Sector A", "41.2", "22.4",
-                      "Normal", true),
-                  _tdRow("Oct 24, 08:00 AM", "ND-043", "Sector B", "38.5", "23.1",
-                      "Normal", true),
-                  _tdRow("Oct 24, 07:45 AM", "ND-088", "Sector C", "18.4", "25.6",
-                      "Low Moisture", false),
-                  _tdRow("Oct 24, 07:30 AM", "ND-012", "Sector A", "43.0", "21.8",
-                      "Normal", true,
-                      isLast: true),
+                  if (_sensorDataList.isEmpty)
+                    const TableRow(children: [
+                      Padding(padding: EdgeInsets.all(16), child: Text("No data available.")),
+                      Text(""), Text(""), Text(""), Text(""), Text("")
+                    ])
+                  else
+                    ..._sensorDataList.map((item) {
+                      final isNormal = (item.soilMoisture ?? 0) > 30; // simplistic logic
+                      return _tdRow(
+                        item.formattedTimestamp.split(',').last.trim(), // short time 
+                        item.deviceCode ?? item.deviceId ?? "-", 
+                        item.farmId?.substring(0, 8) ?? "Main", // short farm id placeholder
+                        SensorData.formatValue(item.soilMoisture), 
+                        SensorData.formatValue(item.temperature),
+                        isNormal ? "Normal" : "Low Moisture", 
+                        isNormal,
+                        isLast: _sensorDataList.last == item
+                      );
+                    }).toList(),
                 ],
               ),
             ),

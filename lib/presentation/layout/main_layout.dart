@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive_layout.dart';
-import '../../core/utils/mock_control_helper.dart';
 import 'widgets/web_sidebar.dart';
 import 'widgets/top_app_bar.dart';
 import '../dashboard/dashboard_view.dart';
-import '../devices/devices_view.dart';
 import '../analytics/analytics_view.dart';
 import '../alerts/alerts_view.dart';
 import '../settings/settings_view.dart';
@@ -22,7 +20,6 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _pages = [
     const DashboardView(),
-    const DevicesView(),
     const AnalyticsView(),
     const AlertsView(),
     const SettingsView(),
@@ -57,24 +54,6 @@ class _MainLayoutState extends State<MainLayout> {
       ),
       mobile: Scaffold(
         body: SafeArea(child: _pages[_selectedIndex]),
-        floatingActionButton: _selectedIndex == 1
-            ? FloatingActionButton(
-                onPressed: () {
-                  MockControlHelper.showSimulationDialog(
-                    context,
-                    title: 'Tambah Perangkat Baru',
-                    description:
-                        'Di lahan, fitur ini akan mendaftarkan node sensor ESP32 baru ke jaringan melalui BLE pairing. '
-                        'Perangkat akan otomatis terkalibrasi dan mulai mengirim data ke server.',
-                    icon: Icons.add_circle_outline,
-                  );
-                },
-                backgroundColor: AppTheme.primaryColor,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30)),
-                child: const Icon(Icons.add, color: Colors.white),
-              )
-            : null,
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
@@ -90,8 +69,6 @@ class _MainLayoutState extends State<MainLayout> {
                 icon: Icon(Icons.dashboard_outlined),
                 activeIcon: Icon(Icons.dashboard),
                 label: 'Dashboard'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.sensors), label: 'Devices'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.analytics_outlined),
                 activeIcon: Icon(Icons.analytics),
