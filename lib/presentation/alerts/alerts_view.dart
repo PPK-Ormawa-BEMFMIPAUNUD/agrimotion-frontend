@@ -143,7 +143,7 @@ class _AlertsViewState extends State<AlertsView> {
                   OutlinedButton.icon(
                     onPressed: _loadAlerts,
                     icon: const Icon(Icons.refresh, size: 16, color: Colors.black87),
-                    label: const Text("Refresh", style: TextStyle(color: Colors.black87)),
+                    label: const Text("Segarkan", style: TextStyle(color: Colors.black87)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -154,7 +154,7 @@ class _AlertsViewState extends State<AlertsView> {
                   const SizedBox(width: 16),
                   TextButton(
                     onPressed: _markAllRead,
-                    child: const Text("Mark All Read",
+                    child: const Text("Tandai Semua Dibaca",
                         style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
                   )
                 ],
@@ -231,7 +231,7 @@ class _AlertsViewState extends State<AlertsView> {
                     children: [
                       Row(
                         children: [
-                          _pill("CRITICAL", Colors.red),
+                          _pill("KRITIS", Colors.red),
                           const SizedBox(width: 8),
                           Text(_formatTimeAgo(alert.timestamp),
                               style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
@@ -254,7 +254,7 @@ class _AlertsViewState extends State<AlertsView> {
                           side: BorderSide(color: Colors.red.shade700),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
-                      child: const Text("Dismiss"),
+                      child: const Text("Abaikan"),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
@@ -304,7 +304,7 @@ class _AlertsViewState extends State<AlertsView> {
               children: [
                 Row(
                   children: [
-                    _pill("WARNING", Colors.orange.shade600),
+                    _pill("PERINGATAN", Colors.orange.shade600),
                     const SizedBox(width: 8),
                     Text(_formatTimeAgo(alert.timestamp),
                         style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
@@ -509,7 +509,7 @@ class _AlertsViewState extends State<AlertsView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _pill("CRITICAL", Colors.red.shade700),
+                    _pill("KRITIS", Colors.red.shade700),
                     Text(_formatTimeAgo(alert.timestamp),
                         style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
                   ],
@@ -575,7 +575,7 @@ class _AlertsViewState extends State<AlertsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _pill("WARNING", Colors.orange.shade700),
+              _pill("PERINGATAN", Colors.orange.shade700),
               Text(_formatTimeAgo(alert.timestamp),
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
             ],
@@ -628,7 +628,7 @@ class _AlertsViewState extends State<AlertsView> {
               onTap: () => _dismissAlert(alert.id),
               child: const Padding(
                 padding: EdgeInsets.all(8.0),
-                child: Text("Dismiss", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                child: Text("Abaikan", style: TextStyle(color: Colors.grey, fontSize: 13)),
               ),
             ),
           )

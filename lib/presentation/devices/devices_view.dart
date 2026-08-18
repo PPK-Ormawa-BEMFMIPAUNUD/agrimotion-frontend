@@ -31,7 +31,7 @@ class _DevicesViewState extends State<DevicesView> {
   Widget _buildDesktopLayout() {
     final List<Map<String, dynamic>> desktopData = [
       {
-        "type": "SOIL MOISTURE NODE",
+        "type": "NODE KELEMBABAN TANAH",
         "name": "Blok A - Sektor 1",
         "location": "Lahan Utama",
         "battery": "85%",
@@ -39,7 +39,7 @@ class _DevicesViewState extends State<DevicesView> {
         "isOnline": true
       },
       {
-        "type": "WEATHER STATION",
+        "type": "STASIUN CUACA",
         "name": "Pusat Pompa Air",
         "location": "Gudang Utara",
         "battery": "5%",
@@ -47,10 +47,10 @@ class _DevicesViewState extends State<DevicesView> {
         "isOnline": false
       },
       {
-        "type": "IRRIGATION VALVE",
+        "type": "KATUP IRIGASI",
         "name": "Blok B - Katup 3",
         "location": "Lahan Sekunder",
-        "battery": "AC Power",
+        "battery": "Daya AC",
         "lastSync": "1 mnt lalu",
         "isOnline": true
       }
@@ -288,23 +288,23 @@ class _DevicesViewState extends State<DevicesView> {
     final List<Map<String, dynamic>> mobileData = [
       {
         "name": "Node Alpha-1",
-        "location": "North Field, Sector A",
+        "location": "Lahan Utara, Sektor A",
         "battery": "92%",
-        "lastSync": "2 mins ago",
+        "lastSync": "2 mnt lalu",
         "isOnline": true
       },
       {
         "name": "Node Beta-2",
-        "location": "South Orchard",
+        "location": "Kebun Selatan",
         "battery": "78%",
-        "lastSync": "5 mins ago",
+        "lastSync": "5 mnt lalu",
         "isOnline": true
       },
       {
         "name": "Node Gamma-3",
-        "location": "West Valley",
+        "location": "Lembah Barat",
         "battery": "12%",
-        "lastSync": "4 hrs ago",
+        "lastSync": "4 jam lalu",
         "isOnline": false
       }
     ];
@@ -314,19 +314,19 @@ class _DevicesViewState extends State<DevicesView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Devices",
+          const Text("Perangkat",
               style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1F2937))),
           const SizedBox(height: 4),
-          const Text("Manage and monitor sensor nodes.",
+          const Text("Kelola dan pantau node sensor di lapangan.",
               style: TextStyle(color: Colors.grey, fontSize: 14)),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("4 ACTIVE NODES",
+              const Text("4 NODE AKTIF",
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -414,7 +414,7 @@ class _DevicesViewState extends State<DevicesView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("BATTERY",
+                    const Text("BATERAI",
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -442,7 +442,7 @@ class _DevicesViewState extends State<DevicesView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("LAST SYNC",
+                    const Text("SINKRONISASI TERAKHIR",
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,

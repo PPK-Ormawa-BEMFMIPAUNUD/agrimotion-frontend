@@ -16,7 +16,7 @@ class AnalyticsView extends StatefulWidget {
 }
 
 class _AnalyticsViewState extends State<AnalyticsView> {
-  String _selectedPeriod = 'Month';
+  String _selectedPeriod = 'Bulan';
   final SensorService _sensorService = SensorService();
   bool _isLoading = true;
   String? _errorMessage;
@@ -93,7 +93,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     }
 
     try {
-      final String fileName = 'agrimotion_report_${DateTime.now().millisecondsSinceEpoch}';
+      final String fileName = 'agrimotion_laporan_${DateTime.now().millisecondsSinceEpoch}';
       final bytes = Uint8List.fromList(utf8.encode(csv));
 
       final path = await FileSaver.instance.saveFile(
@@ -144,7 +144,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               _buildHeader(),
               const SizedBox(height: 24),
               if (_isLoading)
-                const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+                const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppTheme.primaryColor)))
               else if (_errorMessage != null)
                 Center(child: Padding(padding: EdgeInsets.all(40), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))))
               else ...[
@@ -172,13 +172,13 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         final titleColumn = const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Historical Data Analysis",
+            Text("Analisis Data Historis",
                 style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87)),
             SizedBox(height: 4),
-            Text("Review sensor trends and export compliance reports.",
+            Text("Tinjau tren sensor dan ekspor laporan berkala.",
                 style: TextStyle(color: Colors.grey, fontSize: 14)),
           ],
         );
@@ -197,18 +197,18 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildSegmentButton("Day", _selectedPeriod == 'Day'),
+                  _buildSegmentButton("Hari", _selectedPeriod == 'Hari'),
                   Container(width: 1, height: 20, color: Colors.grey.shade300),
-                  _buildSegmentButton("Week", _selectedPeriod == 'Week'),
+                  _buildSegmentButton("Minggu", _selectedPeriod == 'Minggu'),
                   Container(width: 1, height: 20, color: Colors.grey.shade300),
-                  _buildSegmentButton("Month", _selectedPeriod == 'Month'),
+                  _buildSegmentButton("Bulan", _selectedPeriod == 'Bulan'),
                 ],
               ),
             ),
             OutlinedButton.icon(
               onPressed: _exportData,
               icon: const Icon(Icons.download, size: 16, color: Colors.black87),
-              label: const Text("Export Report",
+              label: const Text("Ekspor Laporan",
                   style: TextStyle(
                       color: Colors.black87, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
@@ -254,7 +254,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         MockControlHelper.showSimulationSnackBar(
           context,
           featureName: 'Periode $text',
-          description: 'Data historis akan dimuat untuk periode $text. Di lahan, grafik akan menampilkan data real-time dari database sensor.',
+          description: 'Data historis dimuat untuk periode $text.',
         );
       },
       child: Container(
@@ -287,15 +287,15 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       spacing: 24,
       runSpacing: 24,
       children: [
-        _kpiCard(cardWidth, "AVG SOIL MOISTURE", "${_avgMoisture.toStringAsFixed(1)}%", "Current average",
+        _kpiCard(cardWidth, "RATA-RATA KELEMBABAN TANAH", "${_avgMoisture.toStringAsFixed(1)}%", "Rata-rata saat ini",
             Icons.water_drop_outlined, true, true),
-        _kpiCard(cardWidth, "MEAN TEMPERATURE", "${_meanTemp.toStringAsFixed(1)}°C", "Current average",
+        _kpiCard(cardWidth, "RATA-RATA SUHU", "${_meanTemp.toStringAsFixed(1)}°C", "Rata-rata saat ini",
             Icons.thermostat_outlined, false, true,
             iconColor: Colors.red),
-        _kpiCard(cardWidth, "NUTRIENT NPK INDEX", _avgNpk.toStringAsFixed(1),
-            "Current average", Icons.science_outlined, false, false,
+        _kpiCard(cardWidth, "INDEKS NUTRISI NPK", _avgNpk.toStringAsFixed(1),
+            "Rata-rata saat ini", Icons.science_outlined, false, false,
             valueSub: ""),
-        _kpiCard(cardWidth, "ACTIVE SENSORS", "$_activeSensors", "Detected nodes",
+        _kpiCard(cardWidth, "SENSOR AKTIF", "$_activeSensors", "Node terdeteksi",
             Icons.sensors, true, true,
             valueSub: "", isStatusPoint: true),
       ],
@@ -442,7 +442,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text("Moisture & Temperature Correlation",
+                    Text("Korelasi Kelembaban & Suhu",
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -450,7 +450,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2),
                     SizedBox(height: 4),
-                    Text("30-day historical trend across Sector A.",
+                    Text("Tren historis 30 hari di Sektor A.",
                         style: TextStyle(fontSize: 13, color: Colors.grey)),
                   ],
                 ),
@@ -480,13 +480,13 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Water Usage",
+          const Text("Penggunaan Air",
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87)),
           const SizedBox(height: 4),
-          const Text("Volume by Sector (Liters)",
+          const Text("Volume per Sektor (Liter)",
               style: TextStyle(fontSize: 13, color: Colors.grey)),
           const SizedBox(height: 24),
 
@@ -497,10 +497,10 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _stackedBar("Week 1", 60, 45, 30),
-                _stackedBar("Week 2", 45, 55, 25),
-                _stackedBar("Week 3", 50, 45, 28),
-                _stackedBar("Week 4", 48, 40, 20),
+                _stackedBar("Minggu 1", 60, 45, 30),
+                _stackedBar("Minggu 2", 45, 55, 25),
+                _stackedBar("Minggu 3", 50, 45, 28),
+                _stackedBar("Minggu 4", 48, 40, 20),
               ],
             ),
           ),
@@ -508,11 +508,11 @@ class _AnalyticsViewState extends State<AnalyticsView> {
           const SizedBox(height: 32),
 
           // Legends
-          _waterLegend(AppTheme.primaryColor, "Sector A (North)", "4,200 L"),
+          _waterLegend(AppTheme.primaryColor, "Sektor A (Utara)", "4.200 L"),
           const SizedBox(height: 12),
-          _waterLegend(Colors.green.shade300, "Sector B (East)", "3,850 L"),
+          _waterLegend(Colors.green.shade300, "Sektor B (Timur)", "3.850 L"),
           const SizedBox(height: 12),
-          _waterLegend(Colors.grey.shade300, "Sector C (South)", "2,100 L"),
+          _waterLegend(Colors.grey.shade300, "Sektor C (Selatan)", "2.100 L"),
         ],
       ),
     );
@@ -582,7 +582,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Sensor Log Data",
+                      const Text("Data Log Sensor",
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -592,7 +592,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                         height: 36,
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText: "Filter node ID...",
+                            hintText: "Filter ID node...",
                             hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                             prefixIcon: Icon(Icons.filter_list, size: 16, color: Colors.grey.shade500),
                             contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -614,7 +614,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Expanded(
-                      child: Text("Sensor Log Data",
+                      child: Text("Data Log Sensor",
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -625,7 +625,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                       height: 36,
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: "Filter node ID...",
+                          hintText: "Filter ID node...",
                           hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                           prefixIcon: Icon(Icons.filter_list, size: 16, color: Colors.grey.shade500),
                           contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -666,18 +666,18 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                   // Header Row
                   TableRow(
                     children: [
-                      _th("TIMESTAMP"),
-                      _th("NODE ID"),
-                      _th("SECTOR"),
-                      _th("MOISTURE (%)"),
-                      _th("TEMP (°C)"),
+                      _th("WAKTU"),
+                      _th("ID NODE"),
+                      _th("SEKTOR"),
+                      _th("KELEMBABAN (%)"),
+                      _th("SUHU (°C)"),
                       _th("STATUS"),
                     ],
                   ),
                   // Data Rows
                   if (_sensorDataList.isEmpty)
                     const TableRow(children: [
-                      Padding(padding: EdgeInsets.all(16), child: Text("No data available.")),
+                      Padding(padding: EdgeInsets.all(16), child: Text("Tidak ada data tersedia.")),
                       Text(""), Text(""), Text(""), Text(""), Text("")
                     ])
                   else
@@ -686,14 +686,14 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                       return _tdRow(
                         item.formattedTimestamp.split(',').last.trim(), // short time 
                         item.deviceCode ?? item.deviceId ?? "-", 
-                        item.farmId?.substring(0, 8) ?? "Main", // short farm id placeholder
+                        item.farmId?.substring(0, 8) ?? "Utama", // short farm id placeholder
                         SensorData.formatValue(item.soilMoisture), 
                         SensorData.formatValue(item.temperature),
-                        isNormal ? "Normal" : "Low Moisture", 
+                        isNormal ? "Normal" : "Kelembaban Rendah", 
                         isNormal,
                         isLast: _sensorDataList.last == item
                       );
-                    }).toList(),
+                    }),
                 ],
               ),
             ),
@@ -708,14 +708,14 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Showing 1-4 of 1,024 records",
+                Text("Menampilkan 1-${_sensorDataList.length.clamp(0, 50)} dari ${_sensorDataList.length} data",
                     style:
                         TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                 Row(
                   children: [
-                    _pageBtn("Prev"),
+                    _pageBtn("Sebelumnya"),
                     const SizedBox(width: 8),
-                    _pageBtn("Next"),
+                    _pageBtn("Berikutnya"),
                   ],
                 )
               ],

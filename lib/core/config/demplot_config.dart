@@ -11,16 +11,20 @@ class DeviceNode {
   /// PostgreSQL UUID of the device (used as `deviceId` query parameter).
   final String deviceId;
 
-  /// Human-readable device code (e.g., "node-1a").
+  /// Human-readable device code (e.g., "node-1b", "node-2a").
   final String deviceCode;
 
-  /// Display label for UI (e.g., "Node 1A").
+  /// Display label for UI (e.g., "Node 1", "Node 2A").
   final String label;
+
+  /// Whether the device is physically installed and active.
+  final bool isInstalled;
 
   const DeviceNode({
     required this.deviceId,
     required this.deviceCode,
     required this.label,
+    this.isInstalled = true,
   });
 }
 
@@ -32,7 +36,7 @@ class Demplot {
   /// Display name (e.g., "Demplot 1").
   final String name;
 
-  /// Commodity grown in this Demplot (e.g., "Padi").
+  /// Commodity grown in this Demplot (e.g., "Bunga Pacah", "Sawi", "Cabai").
   final String commodity;
 
   /// Emoji icon for visual identification in the UI.
@@ -55,58 +59,61 @@ class Demplot {
 
 /// Static registry of all Demplots and their Node Sensors.
 ///
-/// UUIDs must match the backend PostgreSQL database exactly.
-/// Using invalid UUIDs will cause HTTP 400 (Bad Request) errors.
+/// UUIDs match the backend database.
 class DemplotConfig {
   DemplotConfig._(); // Prevent instantiation
 
   static const List<Demplot> demplots = [
-    // ── Demplot 1: Padi (2 nodes) ──────────────────────────────────────
+    // ── Demplot 1: Bunga Pacah (Node 1 / dulunya 1B) ────────────────────
     Demplot(
       farmId: '11111111-1111-1111-1111-111111111111',
       name: 'Demplot 1',
-      commodity: 'Padi',
-      icon: '🌾',
+      commodity: 'Bunga Pacah',
+      icon: '🌸',
+      devices: [
+        DeviceNode(
+          deviceId: '10000000-0000-0000-0000-000000000002',
+          deviceCode: 'node-1b',
+          label: 'Node 1',
+          isInstalled: true,
+        ),
+      ],
+    ),
+
+    // ── Demplot 2: Sawi (Node 2A / dulunya 1A & Node 2B belum terpasang)
+    Demplot(
+      farmId: '22222222-2222-2222-2222-222222222222',
+      name: 'Demplot 2',
+      commodity: 'Sawi',
+      icon: '🥬',
       devices: [
         DeviceNode(
           deviceId: '10000000-0000-0000-0000-000000000001',
           deviceCode: 'node-1a',
-          label: 'Node 1A',
-        ),
-        DeviceNode(
-          deviceId: '10000000-0000-0000-0000-000000000002',
-          deviceCode: 'node-1b',
-          label: 'Node 1B',
-        ),
-      ],
-    ),
-
-    // ── Demplot 2: Bunga Pacar Air (1 node) ────────────────────────────
-    Demplot(
-      farmId: '22222222-2222-2222-2222-222222222222',
-      name: 'Demplot 2',
-      commodity: 'Bunga Pacar Air',
-      icon: '🌸',
-      devices: [
-        DeviceNode(
-          deviceId: '20000000-0000-0000-0000-000000000001',
-          deviceCode: 'node-2a',
           label: 'Node 2A',
+          isInstalled: true,
+        ),
+        DeviceNode(
+          deviceId: '20000000-0000-0000-0000-000000000002',
+          deviceCode: 'node-2b',
+          label: 'Node 2B',
+          isInstalled: false,
         ),
       ],
     ),
 
-    // ── Demplot 3: Sayuran Hijau (1 node) ──────────────────────────────
+    // ── Demplot 3: Cabai (Node 3A) ─────────────────────────────────────
     Demplot(
       farmId: '33333333-3333-3333-3333-333333333333',
       name: 'Demplot 3',
-      commodity: 'Sayuran Hijau',
-      icon: '🥬',
+      commodity: 'Cabai',
+      icon: '🌶️',
       devices: [
         DeviceNode(
           deviceId: '30000000-0000-0000-0000-000000000001',
           deviceCode: 'node-3a',
           label: 'Node 3A',
+          isInstalled: true,
         ),
       ],
     ),

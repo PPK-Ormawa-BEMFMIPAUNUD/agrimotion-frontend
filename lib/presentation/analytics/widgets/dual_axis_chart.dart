@@ -29,20 +29,20 @@ class DualAxisChartPainter extends CustomPainter {
 
     // Y-Axis Titles (Rotated)
     _drawRotatedText(
-        canvas, "Moisture (%)", const Offset(-35, 120), textStyleGrey);
+        canvas, "Kelembaban (%)", const Offset(-35, 120), textStyleGrey);
     _drawRotatedText(
-        canvas, "Temperature (°C)", Offset(size.width + 35, 120), textStyleGrey,
+        canvas, "Suhu (°C)", Offset(size.width + 35, 120), textStyleGrey,
         isRight: true);
 
     // X-Axis Labels
     final labelsX = [
-      "Oct 1",
-      "Oct 5",
-      "Oct 10",
-      "Oct 15",
-      "Oct 20",
-      "Oct 25",
-      "Oct 30"
+      "1 Okt",
+      "5 Okt",
+      "10 Okt",
+      "15 Okt",
+      "20 Okt",
+      "25 Okt",
+      "30 Okt"
     ];
     for (int i = 0; i < labelsX.length; i++) {
       double x = (size.width / (labelsX.length - 1)) * i;
@@ -53,13 +53,13 @@ class DualAxisChartPainter extends CustomPainter {
     // 2. Data Points & Jalur Hijau (Moisture)
     // Mensimulasikan bentuk kurva pada mockup
     final List<Offset> greenPoints = [
-      Offset(0, size.height), // Oct 1
-      Offset(size.width * 0.16, size.height * 0.7), // Oct 5
-      Offset(size.width * 0.33, size.height * 0.35), // Oct 10
-      Offset(size.width * 0.5, size.height * 0.6), // Oct 15
-      Offset(size.width * 0.66, size.height * 0.1), // Oct 20 (Peak)
-      Offset(size.width * 0.83, size.height * 0.45), // Oct 25
-      Offset(size.width, size.height * 0.25), // Oct 30
+      Offset(0, size.height), // 1 Okt
+      Offset(size.width * 0.16, size.height * 0.7), // 5 Okt
+      Offset(size.width * 0.33, size.height * 0.35), // 10 Okt
+      Offset(size.width * 0.5, size.height * 0.6), // 15 Okt
+      Offset(size.width * 0.66, size.height * 0.1), // 20 Okt (Peak)
+      Offset(size.width * 0.83, size.height * 0.45), // 25 Okt
+      Offset(size.width, size.height * 0.25), // 30 Okt
     ];
 
     final greenPath = Path();
@@ -111,10 +111,10 @@ class DualAxisChartPainter extends CustomPainter {
       canvas.drawCircle(point, 4, dotPaintGreen);
     }
 
-    // Legend kecil di dekat Peak (Oct 20)
+    // Legend kecil di dekat Peak (20 Okt)
     _drawText(
         canvas,
-        "Avg Moisture (%)",
+        "Rata-rata Kelembaban (%)",
         Offset(greenPoints[4].dx + 10, greenPoints[4].dy - 5),
         const TextStyle(
             color: Colors.black87, fontSize: 10, fontWeight: FontWeight.bold));

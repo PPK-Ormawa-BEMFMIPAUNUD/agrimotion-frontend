@@ -288,15 +288,9 @@ class _DashboardViewState extends State<DashboardView>
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -322,31 +316,52 @@ class _DashboardViewState extends State<DashboardView>
                     }
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
                     padding: const EdgeInsets.symmetric(
                         vertical: 12, horizontal: 8),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppTheme.primaryColor
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
+                      gradient: isSelected ? AppTheme.primaryGradient : null,
+                      color: isSelected ? null : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              )
+                            ]
+                          : null,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          demplot.icon,
-                          style: const TextStyle(fontSize: 18),
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : const Color(0xFFF1F5F9),
+                          ),
+                          child: Center(
+                            child: Text(
+                              demplot.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(
                           demplot.name,
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
                             color: isSelected
                                 ? Colors.white
-                                : Colors.grey.shade700,
+                                : const Color(0xFF1E293B),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -354,37 +369,56 @@ class _DashboardViewState extends State<DashboardView>
                         Text(
                           demplot.commodity,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                             color: isSelected
-                                ? Colors.white.withAlpha(200)
-                                : Colors.grey.shade500,
+                                ? Colors.white.withValues(alpha: 0.9)
+                                : const Color(0xFF64748B),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (!_isLoading) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? Colors.white.withAlpha(40)
+                                  ? Colors.white.withValues(alpha: 0.22)
                                   : (onlineCount > 0
-                                      ? Colors.green.withAlpha(20)
-                                      : Colors.red.withAlpha(20)),
-                              borderRadius: BorderRadius.circular(6),
+                                      ? const Color(0xFFDCFCE7)
+                                      : const Color(0xFFFEE2E2)),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(
-                              '$onlineCount/${demplot.devices.length} online',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? Colors.white.withAlpha(220)
-                                    : (onlineCount > 0
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade600),
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (onlineCount > 0
+                                            ? const Color(0xFF16A34A)
+                                            : const Color(0xFFDC2626)),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$onlineCount/${demplot.devices.length} Online',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (onlineCount > 0
+                                            ? const Color(0xFF15803D)
+                                            : const Color(0xFFB91C1C)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -401,45 +435,79 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   // ============================================================================
-  // NODE SUB-SELECTOR — Chip toggle for multi-node Demplots (e.g., Demplot 1)
+  // NODE SUB-SELECTOR — Chip toggle for multi-node Demplots (e.g., Demplot 2)
   // ============================================================================
   Widget _buildNodeSubSelector() {
     final demplot = _currentDemplot;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.sensors, size: 16, color: Colors.grey.shade600),
-              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.hub_outlined,
+                    size: 16, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(width: 8),
               Text(
                 'Pilih Node Sensor — ${demplot.name}',
-                style: TextStyle(
-                  fontSize: 12,
+                style: const TextStyle(
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${demplot.devices.length} Node',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children: List.generate(demplot.devices.length, (index) {
               final device = demplot.devices[index];
               final isSelected = _selectedNodeIndex == index;
               final telemetry = _telemetryMap[device.deviceId];
-              final isOnline =
-                  telemetry != null && telemetry.isDeviceOnline;
+              final isOnline = telemetry != null && telemetry.isDeviceOnline;
+
+              Color dotColor;
+              if (!device.isInstalled) {
+                dotColor = const Color(0xFF94A3B8);
+              } else if (isOnline) {
+                dotColor = const Color(0xFF22C55E);
+              } else {
+                dotColor = const Color(0xFFEF4444);
+              }
 
               return GestureDetector(
                 onTap: () {
@@ -450,37 +518,53 @@ class _DashboardViewState extends State<DashboardView>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppTheme.primaryColor
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(20),
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
                           ? AppTheme.primaryColor
-                          : Colors.grey.shade300,
+                          : const Color(0xFFCBD5E1),
+                      width: isSelected ? 1.5 : 1,
                     ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Online/Offline dot
                       Container(
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isOnline ? Colors.greenAccent : Colors.red,
+                          color: isSelected && isOnline
+                              ? const Color(0xFF86EFAC)
+                              : dotColor,
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text(
-                        '${device.label} (${device.deviceCode})',
+                        device.isInstalled
+                            ? '${device.label} (${device.deviceCode})'
+                            : '${device.label} (Belum Terpasang)',
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : Colors.black87,
+                          fontSize: 12.5,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF334155),
                         ),
                       ),
                     ],
@@ -502,13 +586,47 @@ class _DashboardViewState extends State<DashboardView>
     final bool hasData = data != null;
     final bool isNodeOnline = hasData && data.isDeviceOnline;
     final bool isConnecting = _isLoading || _isRetrying;
+    final bool isInstalled = _currentDevice.isInstalled;
+
+    String statusText;
+    Color statusTextColor;
+    String badgeLabel;
+    Color badgeColor;
+
+    if (!isInstalled) {
+      statusText = 'Belum Terpasang';
+      statusTextColor = const Color(0xFF64748B);
+      badgeLabel = 'BELUM TERPASANG';
+      badgeColor = const Color(0xFF64748B);
+    } else if (_errorMessage != null) {
+      statusText = 'Terputus';
+      statusTextColor = const Color(0xFFDC2626);
+      badgeLabel = 'TERPUTUS';
+      badgeColor = const Color(0xFFDC2626);
+    } else if (isConnecting) {
+      statusText = 'Menghubungkan...';
+      statusTextColor = const Color(0xFFD97706);
+      badgeLabel = 'MENUNGGU';
+      badgeColor = const Color(0xFFD97706);
+    } else if (isNodeOnline) {
+      statusText = 'Optimal';
+      statusTextColor = AppTheme.primaryColor;
+      badgeLabel = 'ONLINE';
+      badgeColor = const Color(0xFF16A34A);
+    } else {
+      statusText = 'Perangkat Offline';
+      statusTextColor = const Color(0xFFDC2626);
+      badgeLabel = 'OFFLINE';
+      badgeColor = const Color(0xFFDC2626);
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -521,85 +639,80 @@ class _DashboardViewState extends State<DashboardView>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RichText(
-                      text: TextSpan(
-                        text: '${_currentDemplot.icon} ${_currentDemplot.name}: ',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500,
+                    Row(
+                      children: [
+                        Text(
+                          '${_currentDemplot.icon} ${_currentDemplot.name}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF0F172A),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        children: [
-                          TextSpan(
-                            text: _errorMessage != null
-                                ? 'Terputus'
-                                : (isConnecting
-                                    ? 'Menghubungkan...'
-                                    : (isNodeOnline
-                                        ? 'Optimal'
-                                        : 'Device Offline')),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: statusTextColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            statusText,
                             style: TextStyle(
-                              color: _errorMessage != null
-                                  ? Colors.red
-                                  : (isConnecting
-                                      ? Colors.orange
-                                      : (isNodeOnline
-                                          ? AppTheme.primaryColor
-                                          : Colors.red)),
+                              color: statusTextColor,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
-                      _errorMessage != null
-                          ? 'Tidak dapat terhubung ke backend server.'
-                          : (isConnecting
-                              ? 'Menghubungkan ke ${ApiConfig.baseUrl}...'
-                              : 'Komoditas: ${_currentDemplot.commodity} · ${_currentDevice.label} (${_currentDevice.deviceCode})'),
-                      style: TextStyle(
-                          color: Colors.grey.shade600, fontSize: 12),
+                      !isInstalled
+                          ? 'Perangkat ini belum terpasang di lapangan.'
+                          : (_errorMessage != null
+                              ? 'Tidak dapat terhubung ke server backend.'
+                              : (isConnecting
+                                  ? 'Menghubungkan ke ${ApiConfig.baseUrl}...'
+                                  : 'Komoditas: ${_currentDemplot.commodity} · ${_currentDevice.label} (${_currentDevice.deviceCode})')),
+                      style: const TextStyle(
+                          color: Color(0xFF64748B), fontSize: 12.5),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 2,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _statusBadge(
-                isNodeOnline
-                    ? 'ONLINE'
-                    : (isConnecting ? 'MENUNGGU' : 'OFFLINE'),
-                isNodeOnline
-                    ? Colors.green
-                    : (isConnecting ? Colors.orange : Colors.red),
-              ),
+              const SizedBox(width: 12),
+              _statusBadge(badgeLabel, badgeColor),
             ],
           );
 
           final syncInfo = Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.access_time,
-                    size: 13, color: Colors.grey.shade600),
-                const SizedBox(width: 4),
+                const Icon(Icons.sync, size: 14, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    data != null
-                        ? '${data.timeAgo} (${data.formattedTimestamp})'
-                        : (isConnecting ? '...' : 'N/A'),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
+                    !isInstalled
+                        ? 'Belum ada data'
+                        : (data != null
+                            ? '${data.timeAgo} (${data.formattedTimestamp})'
+                            : (isConnecting ? 'Memuat...' : '-')),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF475569),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -613,21 +726,22 @@ class _DashboardViewState extends State<DashboardView>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.wifi, size: 13, color: Colors.grey.shade600),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.wifi, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          'Terakhir online: ${data!.lastOnlineAgo}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600,
+                          'Terakhir aktif: ${data!.lastOnlineAgo}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -642,20 +756,22 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               statusHeader,
               const SizedBox(height: 12),
-              const Divider(height: 1),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
               const SizedBox(height: 12),
               if (isNarrow)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     syncInfo,
-                    const SizedBox(height: 8),
-                    lastOnlineInfo,
+                    if (data?.lastOnline != null) ...[
+                      const SizedBox(height: 8),
+                      lastOnlineInfo,
+                    ],
                   ],
                 )
               else
                 Wrap(
-                  spacing: 12,
+                  spacing: 10,
                   runSpacing: 8,
                   children: [
                     syncInfo,
@@ -673,20 +789,29 @@ class _DashboardViewState extends State<DashboardView>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.circle, color: color, size: 8),
-          const SizedBox(width: 5),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               color: color,
               fontSize: 11,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -702,15 +827,15 @@ class _DashboardViewState extends State<DashboardView>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFFDE68A)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.warning_amber_rounded,
-              color: Colors.amber.shade800, size: 20),
-          const SizedBox(width: 10),
+              color: Colors.amber.shade800, size: 22),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,8 +852,7 @@ class _DashboardViewState extends State<DashboardView>
                 Text(
                   'Server merespons normal, tapi data terakhir sudah lebih dari '
                   '${ApiConfig.staleDataThreshold.inMinutes} menit yang lalu. '
-                  'Kemungkinan sensor ESP32 tidak mengirim data melalui MQTT '
-                  'atau koneksi broker MQTT terputus.',
+                  'Kemungkinan sensor ESP32 tidak mengirim data melalui MQTT.',
                   style: TextStyle(
                     color: Colors.amber.shade800,
                     fontSize: 12,
@@ -751,7 +875,7 @@ class _DashboardViewState extends State<DashboardView>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFFECACA)),
       ),
       child: Column(
@@ -760,8 +884,8 @@ class _DashboardViewState extends State<DashboardView>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-              const SizedBox(width: 10),
+              Icon(Icons.error_outline, color: Colors.red.shade700, size: 22),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -822,8 +946,7 @@ class _DashboardViewState extends State<DashboardView>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Percobaan ulang ke-$_consecutiveFailures · '
-                    'interval: ${_computePollingInterval().inSeconds}s',
+                    'Percobaan ke-$_consecutiveFailures · interval: ${_computePollingInterval().inSeconds}s',
                     style: TextStyle(
                       color: Colors.red.shade600,
                       fontSize: 11,
@@ -860,7 +983,7 @@ class _DashboardViewState extends State<DashboardView>
           crossAxisCount = 2;
         }
 
-        final spacing = 12.0;
+        final spacing = 14.0;
         final cardWidth =
             ((width - (spacing * (crossAxisCount - 1))) / crossAxisCount)
                 .clamp(0.0, double.infinity);
@@ -880,6 +1003,14 @@ class _DashboardViewState extends State<DashboardView>
               'Lux',
               Icons.light_mode_outlined,
               const Color(0xFFF59E0B),
+              const LinearGradient(
+                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              statusLabel: data?.lux != null
+                  ? (data!.lux! > 500 ? 'Terang' : 'Cukup')
+                  : null,
             ),
             _kpiCard(
               cardWidth,
@@ -889,7 +1020,17 @@ class _DashboardViewState extends State<DashboardView>
                   : null,
               '°C',
               Icons.thermostat_outlined,
-              Colors.red,
+              const Color(0xFFEF4444),
+              const LinearGradient(
+                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              statusLabel: data?.temperature != null
+                  ? (data!.temperature! > 32
+                      ? 'Tinggi'
+                      : (data.temperature! < 24 ? 'Sejuk' : 'Normal'))
+                  : null,
             ),
             _kpiCard(
               cardWidth,
@@ -899,7 +1040,15 @@ class _DashboardViewState extends State<DashboardView>
                   : null,
               '%',
               Icons.water_drop_outlined,
-              Colors.blue,
+              const Color(0xFF0284C7),
+              const LinearGradient(
+                colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              statusLabel: data?.humidity != null
+                  ? (data!.humidity! > 70 ? 'Lembap' : 'Optimal')
+                  : null,
             ),
             _kpiCard(
               cardWidth,
@@ -910,6 +1059,10 @@ class _DashboardViewState extends State<DashboardView>
               '%',
               Icons.grass_outlined,
               AppTheme.primaryColor,
+              AppTheme.primaryGradient,
+              statusLabel: data?.soilMoisture != null
+                  ? (data!.soilMoisture! < 30 ? 'Perlu Air' : 'Optimal')
+                  : null,
             ),
           ],
         );
@@ -924,49 +1077,53 @@ class _DashboardViewState extends State<DashboardView>
     String unit,
     IconData icon,
     Color accentColor,
-  ) {
+    LinearGradient gradient, {
+    String? statusLabel,
+  }) {
     if (width <= 0) return const SizedBox.shrink();
 
-    final bool isNa = value == 'N/A';
+    final bool isNa = value == 'N/A' || value == null;
 
     return Container(
       width: width,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: accentColor.withAlpha(25),
-                  borderRadius: BorderRadius.circular(6),
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: accentColor, size: 16),
+                child: Icon(icon, color: accentColor, size: 18),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           value == null
               ? _shimmerPlaceholder()
               : FittedBox(
@@ -979,35 +1136,73 @@ class _DashboardViewState extends State<DashboardView>
                       Text(
                         value,
                         style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: isNa ? Colors.grey.shade400 : Colors.black87,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: isNa
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                       if (!isNa) ...[
                         const SizedBox(width: 4),
                         Text(
                           unit,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade500,
+                            color: Color(0xFF64748B),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-          const SizedBox(height: 8),
-          Text(
-            _currentSensorData != null
-                ? _currentSensorData!.timeAgo
-                : 'Menunggu data...',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 11,
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  _currentSensorData != null
+                      ? _currentSensorData!.timeAgo
+                      : 'Menunggu data...',
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 11,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (statusLabel != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Accent bottom bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: Container(
+              height: 3,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: gradient,
+              ),
             ),
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1019,8 +1214,8 @@ class _DashboardViewState extends State<DashboardView>
       height: 32,
       width: 80,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(6),
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
@@ -1049,37 +1244,33 @@ class _DashboardViewState extends State<DashboardView>
             runSpacing: spacing,
             children: [
               _miniMetricCard(
-                  cardW,
-                  'pH TANAH',
-                  data != null
-                      ? SensorData.formatValue(data.ph)
-                      : null,
-                  Icons.science_outlined,
-                  Colors.purple),
+                cardW,
+                'pH TANAH',
+                data != null ? SensorData.formatValue(data.ph) : null,
+                Icons.science_outlined,
+                const Color(0xFF8B5CF6),
+              ),
               _miniMetricCard(
-                  cardW,
-                  'NITROGEN (N)',
-                  data != null
-                      ? _formatNpkValue(data.npkN)
-                      : null,
-                  Icons.eco_outlined,
-                  const Color(0xFF059669)),
+                cardW,
+                'NITROGEN (N)',
+                data != null ? _formatNpkValue(data.npkN) : null,
+                Icons.eco_outlined,
+                const Color(0xFF10B981),
+              ),
               _miniMetricCard(
-                  cardW,
-                  'FOSFOR (P)',
-                  data != null
-                      ? _formatNpkValue(data.npkP)
-                      : null,
-                  Icons.eco_outlined,
-                  Colors.blue),
+                cardW,
+                'FOSFOR (P)',
+                data != null ? _formatNpkValue(data.npkP) : null,
+                Icons.eco_outlined,
+                const Color(0xFF3B82F6),
+              ),
               _miniMetricCard(
-                  cardW,
-                  'KALIUM (K)',
-                  data != null
-                      ? _formatNpkValue(data.npkK)
-                      : null,
-                  Icons.eco_outlined,
-                  Colors.orange),
+                cardW,
+                'KALIUM (K)',
+                data != null ? _formatNpkValue(data.npkK) : null,
+                Icons.eco_outlined,
+                const Color(0xFFF59E0B),
+              ),
             ],
           );
         } else {
@@ -1092,37 +1283,33 @@ class _DashboardViewState extends State<DashboardView>
             runSpacing: spacing,
             children: [
               _miniMetricCard(
-                  cardW,
-                  'pH TANAH',
-                  data != null
-                      ? SensorData.formatValue(data.ph)
-                      : null,
-                  Icons.science_outlined,
-                  Colors.purple),
+                cardW,
+                'pH TANAH',
+                data != null ? SensorData.formatValue(data.ph) : null,
+                Icons.science_outlined,
+                const Color(0xFF8B5CF6),
+              ),
               _miniMetricCard(
-                  cardW,
-                  'NITROGEN (N)',
-                  data != null
-                      ? _formatNpkValue(data.npkN)
-                      : null,
-                  Icons.eco_outlined,
-                  const Color(0xFF059669)),
+                cardW,
+                'NITROGEN (N)',
+                data != null ? _formatNpkValue(data.npkN) : null,
+                Icons.eco_outlined,
+                const Color(0xFF10B981),
+              ),
               _miniMetricCard(
-                  cardW,
-                  'FOSFOR (P)',
-                  data != null
-                      ? _formatNpkValue(data.npkP)
-                      : null,
-                  Icons.eco_outlined,
-                  Colors.blue),
+                cardW,
+                'FOSFOR (P)',
+                data != null ? _formatNpkValue(data.npkP) : null,
+                Icons.eco_outlined,
+                const Color(0xFF3B82F6),
+              ),
               _miniMetricCard(
-                  cardW,
-                  'KALIUM (K)',
-                  data != null
-                      ? _formatNpkValue(data.npkK)
-                      : null,
-                  Icons.eco_outlined,
-                  Colors.orange),
+                cardW,
+                'KALIUM (K)',
+                data != null ? _formatNpkValue(data.npkK) : null,
+                Icons.eco_outlined,
+                const Color(0xFFF59E0B),
+              ),
             ],
           );
         }
@@ -1140,37 +1327,46 @@ class _DashboardViewState extends State<DashboardView>
       double width, String title, String? value, IconData icon, Color color) {
     if (width <= 0) return const SizedBox.shrink();
 
-    final bool isNa = value == 'N/A';
+    final bool isNa = value == 'N/A' || value == null;
 
     return Container(
       width: width,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 15, color: color),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade600,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF64748B),
+                    letterSpacing: 0.3,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           value == null
               ? _shimmerPlaceholder()
               : FittedBox(
@@ -1180,8 +1376,10 @@ class _DashboardViewState extends State<DashboardView>
                     value,
                     style: TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isNa ? Colors.grey.shade400 : Colors.black87,
+                      fontWeight: FontWeight.w800,
+                      color: isNa
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF0F172A),
                     ),
                   ),
                 ),
@@ -1201,7 +1399,7 @@ class _DashboardViewState extends State<DashboardView>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(flex: 2, child: _buildBarChartCard()),
-              const SizedBox(width: 20),
+              const SizedBox(width: 18),
               Expanded(flex: 1, child: _buildDeviceInfoCard()),
             ],
           );
@@ -1209,7 +1407,7 @@ class _DashboardViewState extends State<DashboardView>
           return Column(
             children: [
               _buildBarChartCard(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               _buildDeviceInfoCard(),
             ],
           );
@@ -1220,26 +1418,55 @@ class _DashboardViewState extends State<DashboardView>
 
   Widget _buildBarChartCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Tren Kelembaban Tanah',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            overflow: TextOverflow.ellipsis,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Tren Kelembaban Tanah',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Data historis 7 hari terakhir',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Mingguan',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Data historis 7 hari terakhir',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           SizedBox(
             height: 180,
             child: LayoutBuilder(
@@ -1266,7 +1493,7 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _barItem(String day, double height, double containerWidth) {
-    final barWidth = (containerWidth / 10).clamp(12.0, 32.0);
+    final barWidth = (containerWidth / 10).clamp(14.0, 34.0);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -1274,17 +1501,22 @@ class _DashboardViewState extends State<DashboardView>
           width: barWidth,
           height: height,
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF16A34A), Color(0xFF0F7646)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
             borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(4)),
+                const BorderRadius.vertical(top: Radius.circular(6)),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           day,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 10,
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -1294,13 +1526,15 @@ class _DashboardViewState extends State<DashboardView>
   Widget _buildDeviceInfoCard() {
     final data = _currentSensorData;
     final device = _currentDevice;
+    final bool isInstalled = device.isInstalled;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1310,61 +1544,80 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               const Expanded(
                 child: Text(
-                  'Info Perangkat Aktif',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  'Info Node Sensor',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (data != null)
+              if (!isInstalled)
+                _statusBadge('BELUM TERPASANG', const Color(0xFF64748B))
+              else if (data != null)
                 _statusBadge(
                   data.isDeviceOnline ? 'ONLINE' : 'OFFLINE',
-                  data.isDeviceOnline ? Colors.green : Colors.red,
+                  data.isDeviceOnline
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFFDC2626),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           _deviceInfoRow(
             Icons.label_outlined,
-            'Kode Device',
+            'Label Node',
+            device.label,
+          ),
+          const SizedBox(height: 12),
+          _deviceInfoRow(
+            Icons.qr_code_outlined,
+            'Kode Perangkat',
             device.deviceCode,
           ),
           const SizedBox(height: 12),
           _deviceInfoRow(
             Icons.router_outlined,
-            'ID Device',
+            'ID Perangkat',
             device.deviceId,
           ),
           const SizedBox(height: 12),
           _deviceInfoRow(
             Icons.landscape_outlined,
-            'Demplot / Farm',
+            'Demplot / Lahan',
             '${_currentDemplot.name} (${_currentDemplot.commodity})',
           ),
           const SizedBox(height: 12),
           _deviceInfoRow(
             Icons.wifi,
             'Status Node',
-            data?.deviceStatus ?? 'N/A',
+            !isInstalled
+                ? 'Belum Terpasang'
+                : (data?.deviceStatus ?? (isInstalled ? 'OFFLINE' : '-')),
           ),
           const SizedBox(height: 12),
           _deviceInfoRow(
             Icons.battery_charging_full,
             'Baterai',
-            data?.battery != null
-                ? '${data!.battery!.toStringAsFixed(0)}%'
-                : 'N/A',
+            !isInstalled
+                ? '-'
+                : (data?.battery != null
+                    ? '${data!.battery!.toStringAsFixed(0)}%'
+                    : '-'),
           ),
           const SizedBox(height: 12),
           _deviceInfoRow(
             Icons.signal_cellular_alt,
-            'RSSI Signal',
-            data?.signal != null ? '${data!.signal} dBm' : 'N/A',
+            'Sinyal RSSI',
+            !isInstalled
+                ? '-'
+                : (data?.signal != null ? '${data!.signal} dBm' : '-'),
           ),
           const SizedBox(height: 12),
           _deviceInfoRow(
             Icons.access_time,
             'Terakhir Online',
-            data?.lastOnlineAgo ?? 'N/A',
+            !isInstalled ? '-' : (data?.lastOnlineAgo ?? '-'),
           ),
         ],
       ),
@@ -1374,14 +1627,22 @@ class _DashboardViewState extends State<DashboardView>
   Widget _deviceInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey.shade500),
+        Container(
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 14, color: const Color(0xFF64748B)),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -1389,9 +1650,9 @@ class _DashboardViewState extends State<DashboardView>
           child: Text(
             value,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Color(0xFF0F172A),
             ),
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.end,
@@ -1401,3 +1662,4 @@ class _DashboardViewState extends State<DashboardView>
     );
   }
 }
+

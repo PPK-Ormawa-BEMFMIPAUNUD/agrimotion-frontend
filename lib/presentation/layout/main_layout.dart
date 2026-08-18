@@ -72,11 +72,15 @@ class _MainLayoutState extends State<MainLayout> {
             BottomNavigationBarItem(
                 icon: Icon(Icons.analytics_outlined),
                 activeIcon: Icon(Icons.analytics),
-                label: 'Analytics'),
+                label: 'Analitik'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.notifications_outlined), label: 'Alerts'),
+                icon: Icon(Icons.notifications_outlined),
+                activeIcon: Icon(Icons.notifications),
+                label: 'Peringatan'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.settings_outlined), label: 'Settings'),
+                icon: Icon(Icons.settings_outlined),
+                activeIcon: Icon(Icons.settings),
+                label: 'Pengaturan'),
           ],
         ),
       ),
