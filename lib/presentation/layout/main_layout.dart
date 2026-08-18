@@ -6,7 +6,7 @@ import 'widgets/top_app_bar.dart';
 import '../dashboard/dashboard_view.dart';
 import '../analytics/analytics_view.dart';
 import '../alerts/alerts_view.dart';
-import '../settings/settings_view.dart';
+import '../devices/devices_view.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -22,7 +22,7 @@ class _MainLayoutState extends State<MainLayout> {
     const DashboardView(),
     const AnalyticsView(),
     const AlertsView(),
-    const SettingsView(),
+    const DevicesView(),
   ];
 
   void _onItemTapped(int index) {
@@ -78,9 +78,9 @@ class _MainLayoutState extends State<MainLayout> {
                 activeIcon: Icon(Icons.notifications),
                 label: 'Peringatan'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.settings_outlined),
-                activeIcon: Icon(Icons.settings),
-                label: 'Pengaturan'),
+                icon: Icon(Icons.router_outlined),
+                activeIcon: Icon(Icons.router),
+                label: 'Perangkat'),
           ],
         ),
       ),

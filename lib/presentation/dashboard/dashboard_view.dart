@@ -238,6 +238,115 @@ class _DashboardViewState extends State<DashboardView>
       _telemetryMap[_currentDevice.deviceId];
 
   // ---------------------------------------------------------------------------
+  // Spraying Control State (Pupuk Cair & Pestisida)
+  // ---------------------------------------------------------------------------
+  bool _isSprayingFertilizer = false;
+  bool _isSprayingPesticide = false;
+  int _fertilizerDuration = 10; // default in seconds
+  int _pesticideDuration = 10; // default in seconds
+  int _sprayRemainingSeconds = 0;
+  Timer? _sprayCountdownTimer;
+  String? _activeSprayingType;
+
+  final List<Map<String, String>> _sprayLogs = [
+    {
+      "type": "Pupuk Cair",
+      "demplot": "Demplot 1 (Bunga Pacah)",
+      "duration": "10s",
+      "time": "Tadi pagi 08:30",
+      "status": "Selesai"
+    },
+    {
+      "type": "Pestisida",
+      "demplot": "Demplot 2 (Sawi)",
+      "duration": "5s",
+      "time": "Kemarin 16:45",
+      "status": "Selesai"
+    }
+  ];
+
+  void _startSpraying({required String type, required int durationSeconds}) {
+    if (_isSprayingFertilizer || _isSprayingPesticide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Penyemprotan lain sedang aktif! Harap tunggu atau hentikan dahulu.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _activeSprayingType = type;
+      _sprayRemainingSeconds = durationSeconds;
+      if (type == 'Pupuk Cair') {
+        _isSprayingFertilizer = true;
+      } else {
+        _isSprayingPesticide = true;
+      }
+    });
+
+    _sprayCountdownTimer?.cancel();
+    _sprayCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_sprayRemainingSeconds <= 1) {
+        timer.cancel();
+        setState(() {
+          _isSprayingFertilizer = false;
+          _isSprayingPesticide = false;
+          _activeSprayingType = null;
+          _sprayRemainingSeconds = 0;
+          _sprayLogs.insert(0, {
+            "type": type,
+            "demplot": '${_currentDemplot.name} (${_currentDemplot.commodity})',
+            "duration": "${durationSeconds}s",
+            "time": "Baru saja",
+            "status": "Selesai"
+          });
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text('Penyemprotan $type selesai pada ${_currentDemplot.name}!'),
+              ],
+            ),
+            backgroundColor: AppTheme.primaryColor,
+          ),
+        );
+      } else {
+        setState(() {
+          _sprayRemainingSeconds--;
+        });
+      }
+    });
+  }
+
+  void _stopSpraying() {
+    _sprayCountdownTimer?.cancel();
+    final stoppedType = _activeSprayingType ?? 'Penyemprotan';
+    setState(() {
+      _isSprayingFertilizer = false;
+      _isSprayingPesticide = false;
+      _activeSprayingType = null;
+      _sprayRemainingSeconds = 0;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$stoppedType dihentikan secara manual.'),
+        backgroundColor: Colors.red.shade700,
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // BUILD
   // ---------------------------------------------------------------------------
 
@@ -264,7 +373,7 @@ class _DashboardViewState extends State<DashboardView>
               _buildStaleBanner(),
             ],
             const SizedBox(height: 20),
-            // Multi-node sub-selector for Demplot 1
+            // Multi-node sub-selector for Demplot 2
             if (_currentDemplot.isMultiNode) ...[
               _buildNodeSubSelector(),
               const SizedBox(height: 16),
@@ -272,6 +381,8 @@ class _DashboardViewState extends State<DashboardView>
             _buildKpiCards(),
             const SizedBox(height: 20),
             _buildNpkSection(),
+            const SizedBox(height: 20),
+            _buildSprayControlSection(),
             const SizedBox(height: 20),
             _buildBottomArea(),
           ],
@@ -632,14 +743,16 @@ class _DashboardViewState extends State<DashboardView>
         builder: (context, constraints) {
           final isNarrow = constraints.maxWidth < 600;
 
-          final statusHeader = Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
+          final statusHeader = LayoutBuilder(
+            builder: (context, headerConstraints) {
+              final isVeryNarrow = headerConstraints.maxWidth < 360;
+
+              if (isVeryNarrow) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           '${_currentDemplot.icon} ${_currentDemplot.name}',
@@ -649,45 +762,105 @@ class _DashboardViewState extends State<DashboardView>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: statusTextColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            statusText,
-                            style: TextStyle(
-                              color: statusTextColor,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        _statusBadge(badgeLabel, badgeColor),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusTextColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusTextColor,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     Text(
                       !isInstalled
                           ? 'Perangkat ini belum terpasang di lapangan.'
                           : (_errorMessage != null
                               ? 'Tidak dapat terhubung ke server backend.'
                               : (isConnecting
-                                  ? 'Menghubungkan ke ${ApiConfig.baseUrl}...'
-                                  : 'Komoditas: ${_currentDemplot.commodity} · ${_currentDevice.label} (${_currentDevice.deviceCode})')),
+                                  ? 'Menghubungkan ke server...'
+                                  : 'Komoditas: ${_currentDemplot.commodity} · ${_currentDevice.label}')),
                       style: const TextStyle(
-                          color: Color(0xFF64748B), fontSize: 12.5),
+                          color: Color(0xFF64748B), fontSize: 12),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 2,
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              _statusBadge(badgeLabel, badgeColor),
-            ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              '${_currentDemplot.icon} ${_currentDemplot.name}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: statusTextColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                statusText,
+                                style: TextStyle(
+                                  color: statusTextColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          !isInstalled
+                              ? 'Perangkat ini belum terpasang di lapangan.'
+                              : (_errorMessage != null
+                                  ? 'Tidak dapat terhubung ke server backend.'
+                                  : (isConnecting
+                                      ? 'Menghubungkan ke ${ApiConfig.baseUrl}...'
+                                      : 'Komoditas: ${_currentDemplot.commodity} · ${_currentDevice.label} (${_currentDevice.deviceCode})')),
+                          style: const TextStyle(
+                              color: Color(0xFF64748B), fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _statusBadge(badgeLabel, badgeColor),
+                ],
+              );
+            },
           );
 
           final syncInfo = Container(
@@ -1385,6 +1558,548 @@ class _DashboardViewState extends State<DashboardView>
                 ),
         ],
       ),
+    );
+  }
+
+  // ============================================================================
+  // SPRAY CONTROL SECTION — Pupuk Cair & Pestisida Aktuator
+  // ============================================================================
+  Widget _buildSprayControlSection() {
+    final isSpraying = _isSprayingFertilizer || _isSprayingPesticide;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.shower_rounded,
+                              size: 16, color: Colors.white),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Kontrol Penyemprotan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Target: ${_currentDemplot.name} (${_currentDemplot.commodity})',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF64748B)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSpraying
+                      ? const Color(0xFFFEF3C7)
+                      : const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSpraying
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF16A34A),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSpraying
+                            ? const Color(0xFFD97706)
+                            : const Color(0xFF16A34A),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      isSpraying ? 'MENYEMPROT' : 'RELAY SIAP',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isSpraying
+                            ? const Color(0xFFB45309)
+                            : const Color(0xFF15803D),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Banner jika sedang aktif menyemprot
+          if (isSpraying) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFF59E0B)),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Color(0xFFD97706),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Menyemprot $_activeSprayingType...',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                        Text(
+                          'Tersisa: $_sprayRemainingSeconds detik di ${_currentDemplot.name}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _stopSpraying,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      minimumSize: const Size(0, 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Hentikan',
+                        style: TextStyle(
+                            fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 18),
+
+          // Dua Kartu Kontrol
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 550;
+
+              final fertilizerCard = _sprayCard(
+                title: 'Semprot Pupuk Cair',
+                subtitle: 'Nutrisi organik untuk kesuburan tanah & tanaman',
+                icon: Icons.eco_rounded,
+                accentColor: const Color(0xFF0F7646),
+                gradient: AppTheme.primaryGradient,
+                selectedDuration: _fertilizerDuration,
+                onDurationChanged: (val) =>
+                    setState(() => _fertilizerDuration = val),
+                isThisSpraying: _isSprayingFertilizer,
+                onAction: () => _confirmAndSpray(
+                  type: 'Pupuk Cair',
+                  durationSeconds: _fertilizerDuration,
+                ),
+              );
+
+              final pesticideCard = _sprayCard(
+                title: 'Semprot Pestisida',
+                subtitle: 'Proteksi tanaman dari hama & jamur',
+                icon: Icons.shield_outlined,
+                accentColor: const Color(0xFFD97706),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                selectedDuration: _pesticideDuration,
+                onDurationChanged: (val) =>
+                    setState(() => _pesticideDuration = val),
+                isThisSpraying: _isSprayingPesticide,
+                onAction: () => _confirmAndSpray(
+                  type: 'Pestisida',
+                  durationSeconds: _pesticideDuration,
+                ),
+              );
+
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: fertilizerCard),
+                    const SizedBox(width: 14),
+                    Expanded(child: pesticideCard),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    fertilizerCard,
+                    const SizedBox(height: 14),
+                    pesticideCard,
+                  ],
+                );
+              }
+            },
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+
+          // Riwayat singkat penyemprotan
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Aktivitas Penyemprotan Terakhir',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              Text(
+                '${_sprayLogs.length} Log',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ..._sprayLogs.take(2).map((log) => Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            log['type'] == 'Pupuk Cair'
+                                ? Icons.eco
+                                : Icons.shield,
+                            size: 14,
+                            color: log['type'] == 'Pupuk Cair'
+                                ? AppTheme.primaryColor
+                                : const Color(0xFFD97706),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${log['type']} (${log['duration']}) · ${log['demplot']}',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        log['time'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _sprayCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required LinearGradient gradient,
+    required int selectedDuration,
+    required Function(int) onDurationChanged,
+    required bool isThisSpraying,
+    required VoidCallback onAction,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: accentColor),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Text(
+                'Durasi:',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF475569),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Wrap(
+                spacing: 6,
+                children: [5, 10, 15].map((sec) {
+                  final isSelected = selectedDuration == sec;
+                  return GestureDetector(
+                    onTap: () => onDurationChanged(sec),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? accentColor
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isSelected
+                              ? accentColor
+                              : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      child: Text(
+                        '${sec}s',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 38,
+            child: ElevatedButton.icon(
+              onPressed: isThisSpraying ? _stopSpraying : onAction,
+              icon: Icon(
+                isThisSpraying
+                    ? Icons.stop_circle_outlined
+                    : Icons.play_arrow_rounded,
+                size: 18,
+                color: Colors.white,
+              ),
+              label: Text(
+                isThisSpraying
+                    ? 'Hentikan ($_sprayRemainingSeconds s)'
+                    : 'Mulai $title',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isThisSpraying ? Colors.red.shade700 : accentColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmAndSpray({
+    required String type,
+    required int durationSeconds,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              type == 'Pupuk Cair' ? Icons.eco : Icons.shield,
+              color: type == 'Pupuk Cair'
+                  ? AppTheme.primaryColor
+                  : const Color(0xFFD97706),
+            ),
+            const SizedBox(width: 10),
+            Text('Konfirmasi $type',
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Anda akan mengaktifkan aktuator penyemprotan $type dengan parameter:',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  _confirmRow('Target Demplot',
+                      '${_currentDemplot.name} (${_currentDemplot.commodity})'),
+                  const SizedBox(height: 6),
+                  _confirmRow('Node Aktif', _currentDevice.label),
+                  const SizedBox(height: 6),
+                  _confirmRow('Durasi Semprot', '$durationSeconds Detik'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _startSpraying(type: type, durationSeconds: durationSeconds);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: type == 'Pupuk Cair'
+                  ? AppTheme.primaryColor
+                  : const Color(0xFFD97706),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Mulai Semprot'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _confirmRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        Text(value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+      ],
     );
   }
 

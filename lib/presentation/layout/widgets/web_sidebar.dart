@@ -86,7 +86,7 @@ class WebSidebar extends StatelessWidget {
                 const SizedBox(height: 6),
                 _sidebarItem(Icons.notifications_none_rounded, Icons.notifications_rounded, "Peringatan", 2),
                 const SizedBox(height: 6),
-                _sidebarItem(Icons.settings_outlined, Icons.settings_rounded, "Pengaturan", 3),
+                _sidebarItem(Icons.router_outlined, Icons.router_rounded, "Perangkat", 3),
               ],
             ),
           ),
