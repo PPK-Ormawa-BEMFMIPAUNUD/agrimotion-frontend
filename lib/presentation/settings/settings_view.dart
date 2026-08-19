@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import '../../core/services/mqtt_service.dart';
 import '../../core/utils/mock_control_helper.dart';
 
 class SettingsView extends StatefulWidget {
@@ -424,9 +426,57 @@ class _SettingsViewState extends State<SettingsView> {
           const Divider(height: 24),
           _buildInfoRow('Firmware ESP32', 'v2.4.1'),
           const Divider(height: 24),
-          _buildInfoRow('Server API', '103.176.x.x:3000'),
+          _buildInfoRow('Server API', '103.174.114.65:3001'),
           const Divider(height: 24),
-          _buildInfoRow('Protokol', 'MQTT / HTTP REST'),
+          _buildInfoRow('MQTT Broker', '103.174.114.65:1883'),
+          const Divider(height: 24),
+          // Live MQTT connection status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Status MQTT',
+                  style: TextStyle(fontSize: 15, color: Colors.black54)),
+              ValueListenableBuilder<MqttConnectionState>(
+                valueListenable: MqttService.instance.connectionState,
+                builder: (context, state, _) {
+                  final isConnected = state == MqttConnectionState.connected;
+                  final isConnecting = state == MqttConnectionState.connecting;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isConnected
+                              ? const Color(0xFF16A34A)
+                              : (isConnecting
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFFDC2626)),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isConnected
+                            ? 'Terhubung'
+                            : (isConnecting ? 'Menghubungkan...' : 'Terputus'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isConnected
+                              ? const Color(0xFF16A34A)
+                              : (isConnecting
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFFDC2626)),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );

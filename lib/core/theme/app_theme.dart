@@ -55,7 +55,7 @@ class AppTheme {
         surface: cardColor,
       ),
       fontFamily: 'Roboto',
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -66,4 +66,3 @@ class AppTheme {
     );
   }
 }
-
