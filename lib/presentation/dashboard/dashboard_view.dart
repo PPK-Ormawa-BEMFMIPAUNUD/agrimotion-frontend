@@ -228,22 +228,18 @@ class _DashboardViewState extends State<DashboardView>
     _fetchAllTelemetry();
   }
 
-
   // ---------------------------------------------------------------------------
   // Computed Getters
   // ---------------------------------------------------------------------------
 
   /// The currently selected Demplot configuration.
-  Demplot get _currentDemplot =>
-      DemplotConfig.demplots[_selectedDemplotIndex];
+  Demplot get _currentDemplot => DemplotConfig.demplots[_selectedDemplotIndex];
 
   /// The currently active device node within the selected Demplot.
-  DeviceNode get _currentDevice =>
-      _currentDemplot.devices[_selectedNodeIndex];
+  DeviceNode get _currentDevice => _currentDemplot.devices[_selectedNodeIndex];
 
   /// The telemetry data for the currently active device node.
-  SensorData? get _currentSensorData =>
-      _telemetryMap[_currentDevice.deviceId];
+  SensorData? get _currentSensorData => _telemetryMap[_currentDevice.deviceId];
 
   // ---------------------------------------------------------------------------
   // Spraying Control State (Pupuk Cair, Pestisida & Air)
@@ -279,7 +275,8 @@ class _DashboardViewState extends State<DashboardView>
     if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Penyemprotan lain sedang aktif! Harap tunggu atau hentikan dahulu.'),
+          content: Text(
+              'Penyemprotan lain sedang aktif! Harap tunggu atau hentikan dahulu.'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -306,7 +303,9 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               Icon(Icons.wifi_off, color: Colors.white, size: 18),
               SizedBox(width: 8),
-              Expanded(child: Text('MQTT belum terhubung. Perintah tidak dikirim ke ESP32.')),
+              Expanded(
+                  child: Text(
+                      'MQTT belum terhubung. Perintah tidak dikirim ke ESP32.')),
             ],
           ),
           backgroundColor: Colors.red.shade700,
@@ -353,7 +352,9 @@ class _DashboardViewState extends State<DashboardView>
           _sprayLogs.insert(0, {
             "type": type,
             "demplot": '${_currentDemplot.name} (${_currentDemplot.commodity})',
-            "duration": "${durationSeconds}s",
+            "duration": type == 'Siram Air'
+                ? '${durationSeconds ~/ 60}m'
+                : '${durationSeconds}s',
             "time": "Baru saja",
             "status": "Selesai"
           });
@@ -365,7 +366,8 @@ class _DashboardViewState extends State<DashboardView>
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Text('Penyemprotan $type selesai pada ${_currentDemplot.name}!'),
+                Text(
+                    'Penyemprotan $type selesai pada ${_currentDemplot.name}!'),
               ],
             ),
             backgroundColor: AppTheme.primaryColor,
@@ -421,7 +423,8 @@ class _DashboardViewState extends State<DashboardView>
   /// Listens to `agrimotion/device/pumps/status` for real-time feedback from ESP32.
   /// Displays a themed SnackBar when a status message is received.
   void _listenMqttStatus() {
-    _mqttStatusSubscription = MqttService.instance.onStatusReceived.listen((status) {
+    _mqttStatusSubscription =
+        MqttService.instance.onStatusReceived.listen((status) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -579,8 +582,8 @@ class _DashboardViewState extends State<DashboardView>
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     decoration: BoxDecoration(
                       gradient: isSelected ? AppTheme.primaryGradient : null,
                       color: isSelected ? null : Colors.transparent,
@@ -588,7 +591,8 @@ class _DashboardViewState extends State<DashboardView>
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               )
@@ -734,8 +738,7 @@ class _DashboardViewState extends State<DashboardView>
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
@@ -794,7 +797,8 @@ class _DashboardViewState extends State<DashboardView>
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.2),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             )
@@ -1056,7 +1060,8 @@ class _DashboardViewState extends State<DashboardView>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.wifi, size: 14, color: Color(0xFF64748B)),
+                      const Icon(Icons.wifi,
+                          size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
@@ -1338,9 +1343,7 @@ class _DashboardViewState extends State<DashboardView>
             _kpiCard(
               cardWidth,
               'SUHU UDARA',
-              data != null
-                  ? SensorData.formatValue(data.temperature)
-                  : null,
+              data != null ? SensorData.formatValue(data.temperature) : null,
               '°C',
               Icons.thermostat_outlined,
               const Color(0xFFEF4444),
@@ -1358,9 +1361,7 @@ class _DashboardViewState extends State<DashboardView>
             _kpiCard(
               cardWidth,
               'KELEMBABAN UDARA',
-              data != null
-                  ? SensorData.formatValue(data.humidity)
-                  : null,
+              data != null ? SensorData.formatValue(data.humidity) : null,
               '%',
               Icons.water_drop_outlined,
               const Color(0xFF0284C7),
@@ -1376,9 +1377,7 @@ class _DashboardViewState extends State<DashboardView>
             _kpiCard(
               cardWidth,
               'KELEMBABAN TANAH',
-              data != null
-                  ? SensorData.formatValue(data.soilMoisture)
-                  : null,
+              data != null ? SensorData.formatValue(data.soilMoisture) : null,
               '%',
               Icons.grass_outlined,
               AppTheme.primaryColor,
@@ -1558,8 +1557,7 @@ class _DashboardViewState extends State<DashboardView>
         final spacing = 12.0;
 
         if (isWide) {
-          final cardW =
-              ((width - spacing * 3) / 4).clamp(0.0, double.infinity);
+          final cardW = ((width - spacing * 3) / 4).clamp(0.0, double.infinity);
           if (cardW <= 0) return const SizedBox.shrink();
 
           return Wrap(
@@ -1597,8 +1595,7 @@ class _DashboardViewState extends State<DashboardView>
             ],
           );
         } else {
-          final cardW =
-              ((width - spacing) / 2).clamp(0.0, double.infinity);
+          final cardW = ((width - spacing) / 2).clamp(0.0, double.infinity);
           if (cardW <= 0) return const SizedBox.shrink();
 
           return Wrap(
@@ -1715,7 +1712,8 @@ class _DashboardViewState extends State<DashboardView>
   // SPRAY CONTROL SECTION — Pupuk Cair & Pestisida Aktuator
   // ============================================================================
   Widget _buildSprayControlSection() {
-    final isSpraying = _isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater;
+    final isSpraying =
+        _isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1771,7 +1769,8 @@ class _DashboardViewState extends State<DashboardView>
               ValueListenableBuilder<MqttConnectionState>(
                 valueListenable: MqttService.instance.connectionState,
                 builder: (context, mqttState, _) {
-                  final bool mqttConnected = mqttState == MqttConnectionState.connected;
+                  final bool mqttConnected =
+                      mqttState == MqttConnectionState.connected;
 
                   Color badgeBg;
                   Color badgeBorder;
@@ -1957,13 +1956,15 @@ class _DashboardViewState extends State<DashboardView>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
+                durationOptions: const [5, 10, 15],
+                durationUnit: 'm',
                 selectedDuration: _waterDuration,
                 onDurationChanged: (val) =>
                     setState(() => _waterDuration = val),
                 isThisSpraying: _isSprayingWater,
                 onAction: () => _confirmAndSpray(
                   type: 'Siram Air',
-                  durationSeconds: _waterDuration,
+                  durationSeconds: _waterDuration * 60,
                 ),
               );
 
@@ -2084,6 +2085,8 @@ class _DashboardViewState extends State<DashboardView>
     required Function(int) onDurationChanged,
     required bool isThisSpraying,
     required VoidCallback onAction,
+    List<int> durationOptions = const [5, 10, 15],
+    String durationUnit = 's',
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2146,17 +2149,15 @@ class _DashboardViewState extends State<DashboardView>
               const SizedBox(width: 8),
               Wrap(
                 spacing: 6,
-                children: [5, 10, 15].map((sec) {
-                  final isSelected = selectedDuration == sec;
+                children: durationOptions.map((val) {
+                  final isSelected = selectedDuration == val;
                   return GestureDetector(
-                    onTap: () => onDurationChanged(sec),
+                    onTap: () => onDurationChanged(val),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? accentColor
-                            : Colors.white,
+                        color: isSelected ? accentColor : Colors.white,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isSelected
@@ -2165,7 +2166,7 @@ class _DashboardViewState extends State<DashboardView>
                         ),
                       ),
                       child: Text(
-                        '${sec}s',
+                        '$val$durationUnit',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -2236,17 +2237,14 @@ class _DashboardViewState extends State<DashboardView>
       typeColor = const Color(0xFFD97706);
     }
 
-    final String actionLabel = type == 'Siram Air'
-        ? 'penyiraman air bersih'
-        : 'penyemprotan $type';
+    final String actionLabel =
+        type == 'Siram Air' ? 'penyiraman air bersih' : 'penyemprotan $type';
 
-    final String durationLabel = type == 'Siram Air'
-        ? 'Durasi Siram'
-        : 'Durasi Semprot';
+    final String durationLabel =
+        type == 'Siram Air' ? 'Durasi Siram' : 'Durasi Semprot';
 
-    final String buttonLabel = type == 'Siram Air'
-        ? 'Mulai Siram'
-        : 'Mulai Semprot';
+    final String buttonLabel =
+        type == 'Siram Air' ? 'Mulai Siram' : 'Mulai Semprot';
 
     showDialog(
       context: context,
@@ -2258,7 +2256,8 @@ class _DashboardViewState extends State<DashboardView>
             const SizedBox(width: 10),
             Expanded(
               child: Text('Konfirmasi $type',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -2285,7 +2284,12 @@ class _DashboardViewState extends State<DashboardView>
                   const SizedBox(height: 6),
                   _confirmRow('Node Aktif', _currentDevice.label),
                   const SizedBox(height: 6),
-                  _confirmRow(durationLabel, '$durationSeconds Detik'),
+                  _confirmRow(
+                    durationLabel,
+                    type == 'Siram Air'
+                        ? '${durationSeconds ~/ 60} Menit'
+                        : '$durationSeconds Detik',
+                  ),
                 ],
               ),
             ),
@@ -2294,7 +2298,8 @@ class _DashboardViewState extends State<DashboardView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+            child:
+                const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2304,7 +2309,8 @@ class _DashboardViewState extends State<DashboardView>
             style: ElevatedButton.styleFrom(
               backgroundColor: typeColor,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: Text(buttonLabel),
           ),
@@ -2317,9 +2323,13 @@ class _DashboardViewState extends State<DashboardView>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        Text(label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
         Text(value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A))),
       ],
     );
   }
@@ -2386,8 +2396,7 @@ class _DashboardViewState extends State<DashboardView>
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryLight,
                   borderRadius: BorderRadius.circular(8),
@@ -2442,8 +2451,7 @@ class _DashboardViewState extends State<DashboardView>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(6)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
           ),
         ),
         const SizedBox(height: 8),
@@ -2598,4 +2606,3 @@ class _DashboardViewState extends State<DashboardView>
     );
   }
 }
-
