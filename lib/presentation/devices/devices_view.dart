@@ -22,7 +22,8 @@ class _DevicesViewState extends State<DevicesView> {
   void initState() {
     super.initState();
     _loadTelemetry();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadTelemetry());
+    _refreshTimer =
+        Timer.periodic(const Duration(seconds: 10), (_) => _loadTelemetry());
   }
 
   @override
@@ -82,7 +83,8 @@ class _DevicesViewState extends State<DevicesView> {
                       SizedBox(height: 4),
                       Text(
                         "Pemantauan status konektivitas dan daya perangkat sensor.",
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                        style:
+                            TextStyle(color: Color(0xFF64748B), fontSize: 13),
                       ),
                     ],
                   ),
@@ -108,7 +110,8 @@ class _DevicesViewState extends State<DevicesView> {
                   children: [
                     Row(
                       children: [
-                        Text(demplot.icon, style: const TextStyle(fontSize: 20)),
+                        Text(demplot.icon,
+                            style: const TextStyle(fontSize: 20)),
                         const SizedBox(width: 8),
                         Text(
                           '${demplot.name} — ${demplot.commodity}',
@@ -135,7 +138,8 @@ class _DevicesViewState extends State<DevicesView> {
                           children: demplot.devices.map((device) {
                             final telemetry = _telemetryMap[device.deviceId];
                             final isInstalled = device.isInstalled;
-                            final isOnline = isInstalled && (telemetry?.isDeviceOnline ?? false);
+                            final isOnline = isInstalled &&
+                                (telemetry?.isDeviceOnline ?? false);
 
                             return _buildDeviceCard(
                               width: cardWidth,
@@ -258,7 +262,9 @@ class _DevicesViewState extends State<DevicesView> {
             label: "Sinyal RSSI",
             value: !isInstalled
                 ? "-"
-                : (telemetry?.signal != null ? '${telemetry!.signal} dBm' : "-"),
+                : (telemetry?.signal != null
+                    ? '${telemetry!.signal} dBm'
+                    : "-"),
           ),
           const SizedBox(height: 8),
           _detailRow(
@@ -332,4 +338,3 @@ class _DevicesViewState extends State<DevicesView> {
     );
   }
 }
-

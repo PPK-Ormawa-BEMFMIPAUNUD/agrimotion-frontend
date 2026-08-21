@@ -86,7 +86,8 @@ class _AlertsViewState extends State<AlertsView> {
         final isDesktop = constraints.maxWidth > 850;
 
         if (_isLoading) {
-          return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+          return const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryColor));
         }
         if (_errorMessage.isNotEmpty) {
           return Center(
@@ -95,9 +96,12 @@ class _AlertsViewState extends State<AlertsView> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
-                Text(_errorMessage, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                Text(_errorMessage,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                ElevatedButton(onPressed: _loadAlerts, child: const Text('Coba Lagi')),
+                ElevatedButton(
+                    onPressed: _loadAlerts, child: const Text('Coba Lagi')),
               ],
             ),
           );
@@ -116,8 +120,10 @@ class _AlertsViewState extends State<AlertsView> {
   // TATA LETAK DESKTOP (WEB)
   // ==========================================================================
   Widget _buildDesktopLayout() {
-    int critCount = _alerts.where((a) => a.severity == AlertSeverity.critical).length;
-    int warnCount = _alerts.where((a) => a.severity == AlertSeverity.warning).length;
+    int critCount =
+        _alerts.where((a) => a.severity == AlertSeverity.critical).length;
+    int warnCount =
+        _alerts.where((a) => a.severity == AlertSeverity.warning).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
@@ -132,9 +138,13 @@ class _AlertsViewState extends State<AlertsView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Sistem Peringatan Dini",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87)),
                   const SizedBox(height: 4),
-                  Text("Memantau anomali sensor dan isu kritis di seluruh lahan. ($critCount Kritis, $warnCount Peringatan)",
+                  Text(
+                      "Memantau anomali sensor dan isu kritis di seluruh lahan. ($critCount Kritis, $warnCount Peringatan)",
                       style: const TextStyle(color: Colors.grey, fontSize: 14)),
                 ],
               ),
@@ -142,11 +152,15 @@ class _AlertsViewState extends State<AlertsView> {
                 children: [
                   OutlinedButton.icon(
                     onPressed: _loadAlerts,
-                    icon: const Icon(Icons.refresh, size: 16, color: Colors.black87),
-                    label: const Text("Segarkan", style: TextStyle(color: Colors.black87)),
+                    icon: const Icon(Icons.refresh,
+                        size: 16, color: Colors.black87),
+                    label: const Text("Segarkan",
+                        style: TextStyle(color: Colors.black87)),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                       side: BorderSide(color: Colors.grey.shade300),
                       backgroundColor: Colors.white,
                     ),
@@ -155,7 +169,9 @@ class _AlertsViewState extends State<AlertsView> {
                   TextButton(
                     onPressed: _markAllRead,
                     child: const Text("Tandai Semua Dibaca",
-                        style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.bold)),
                   )
                 ],
               )
@@ -169,11 +185,18 @@ class _AlertsViewState extends State<AlertsView> {
                 padding: const EdgeInsets.symmetric(vertical: 64.0),
                 child: Column(
                   children: [
-                    Icon(Icons.check_circle_outline, size: 80, color: Colors.green.shade300),
+                    Icon(Icons.check_circle_outline,
+                        size: 80, color: Colors.green.shade300),
                     const SizedBox(height: 16),
-                    const Text("Sistem Aman", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    const Text("Sistem Aman",
+                        style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87)),
                     const SizedBox(height: 8),
-                    const Text("Tidak ada peringatan kritis atau anomali yang terdeteksi saat ini.", style: TextStyle(color: Colors.grey)),
+                    const Text(
+                        "Tidak ada peringatan kritis atau anomali yang terdeteksi saat ini.",
+                        style: TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
@@ -206,14 +229,20 @@ class _AlertsViewState extends State<AlertsView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.red.shade200, width: 2),
-        boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.red.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 2)
+        ],
       ),
       child: Stack(
         children: [
           Positioned(
             right: 40,
             top: 10,
-            child: Icon(Icons.warning_amber_rounded, size: 100, color: Colors.red.withOpacity(0.05)),
+            child: Icon(Icons.warning_amber_rounded,
+                size: 100, color: Colors.red.withOpacity(0.05)),
           ),
           Padding(
             padding: const EdgeInsets.all(24.0),
@@ -223,7 +252,11 @@ class _AlertsViewState extends State<AlertsView> {
                 CircleAvatar(
                     backgroundColor: Colors.red.shade700,
                     radius: 24,
-                    child: Icon(alert.title.contains('Suhu') ? Icons.thermostat : Icons.water_drop, color: Colors.white)),
+                    child: Icon(
+                        alert.title.contains('Suhu')
+                            ? Icons.thermostat
+                            : Icons.water_drop,
+                        color: Colors.white)),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Column(
@@ -234,14 +267,22 @@ class _AlertsViewState extends State<AlertsView> {
                           _pill("KRITIS", Colors.red),
                           const SizedBox(width: 8),
                           Text(_formatTimeAgo(alert.timestamp),
-                              style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.bold)),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(alert.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(alert.title,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
                       Text(alert.description,
-                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4)),
+                          style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                              height: 1.4)),
                     ],
                   ),
                 ),
@@ -252,8 +293,10 @@ class _AlertsViewState extends State<AlertsView> {
                       style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red.shade700,
                           side: BorderSide(color: Colors.red.shade700),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 16)),
                       child: const Text("Abaikan"),
                     ),
                     const SizedBox(width: 12),
@@ -262,16 +305,21 @@ class _AlertsViewState extends State<AlertsView> {
                         MockControlHelper.showSimulationDialog(
                           context,
                           title: 'Tindakan Darurat',
-                          description: 'Mengaktifkan perintah darurat (seperti pompa/ventilasi) ke alat ${alert.deviceId}.',
+                          description:
+                              'Mengaktifkan perintah darurat (seperti pompa/ventilasi) ke alat ${alert.deviceId}.',
                           icon: Icons.power_settings_new,
                         );
                       },
-                      icon: const Icon(Icons.power_settings_new, size: 16, color: Colors.white),
-                      label: const Text("Tindak Lanjut", style: TextStyle(color: Colors.white)),
+                      icon: const Icon(Icons.power_settings_new,
+                          size: 16, color: Colors.white),
+                      label: const Text("Tindak Lanjut",
+                          style: TextStyle(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red.shade700,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 16)),
                     )
                   ],
                 )
@@ -296,7 +344,12 @@ class _AlertsViewState extends State<AlertsView> {
           CircleAvatar(
               backgroundColor: Colors.orange.shade600,
               radius: 20,
-              child: Icon(alert.title.contains('Suhu') ? Icons.thermostat : Icons.opacity, color: Colors.white, size: 20)),
+              child: Icon(
+                  alert.title.contains('Suhu')
+                      ? Icons.thermostat
+                      : Icons.opacity,
+                  color: Colors.white,
+                  size: 20)),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
@@ -307,14 +360,22 @@ class _AlertsViewState extends State<AlertsView> {
                     _pill("PERINGATAN", Colors.orange.shade600),
                     const SizedBox(width: 8),
                     Text(_formatTimeAgo(alert.timestamp),
-                        style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(alert.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(alert.title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(alert.description,
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4)),
+                    style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 13,
+                        height: 1.4)),
               ],
             ),
           ),
@@ -355,14 +416,22 @@ class _AlertsViewState extends State<AlertsView> {
                     _pill("INFO", Colors.blue.shade600),
                     const SizedBox(width: 8),
                     Text(_formatTimeAgo(alert.timestamp),
-                        style: const TextStyle(fontSize: 11, color: Colors.black87, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(alert.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(alert.title,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(alert.description,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4)),
+                    style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                        height: 1.4)),
               ],
             ),
           ),
@@ -379,8 +448,10 @@ class _AlertsViewState extends State<AlertsView> {
   // TATA LETAK MOBILE
   // ==========================================================================
   Widget _buildMobileLayout() {
-    int critCount = _alerts.where((a) => a.severity == AlertSeverity.critical).length;
-    int warnCount = _alerts.where((a) => a.severity == AlertSeverity.warning).length;
+    int critCount =
+        _alerts.where((a) => a.severity == AlertSeverity.critical).length;
+    int warnCount =
+        _alerts.where((a) => a.severity == AlertSeverity.warning).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -391,7 +462,10 @@ class _AlertsViewState extends State<AlertsView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text("Peringatan Dini",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87)),
               IconButton(
                 icon: const Icon(Icons.refresh, color: AppTheme.primaryColor),
                 onPressed: _loadAlerts,
@@ -410,12 +484,19 @@ class _AlertsViewState extends State<AlertsView> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12)),
                   child: Column(
                     children: [
                       Text(critCount.toString(),
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.red.shade700)),
-                      Text("Kritis", style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w500))
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade700)),
+                      Text("Kritis",
+                          style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.w500))
                     ],
                   ),
                 ),
@@ -425,12 +506,19 @@ class _AlertsViewState extends State<AlertsView> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12)),
                   child: Column(
                     children: [
                       Text(warnCount.toString(),
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.orange.shade700)),
-                      Text("Peringatan", style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.w500))
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade700)),
+                      Text("Peringatan",
+                          style: TextStyle(
+                              color: Colors.orange.shade700,
+                              fontWeight: FontWeight.w500))
                     ],
                   ),
                 ),
@@ -442,10 +530,13 @@ class _AlertsViewState extends State<AlertsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Daftar Peringatan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text("Daftar Peringatan",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               TextButton(
                 onPressed: _markAllRead,
-                child: const Text("Tandai Semua Dibaca", style: TextStyle(fontSize: 12, color: AppTheme.primaryColor)),
+                child: const Text("Tandai Semua Dibaca",
+                    style:
+                        TextStyle(fontSize: 12, color: AppTheme.primaryColor)),
               )
             ],
           ),
@@ -457,9 +548,14 @@ class _AlertsViewState extends State<AlertsView> {
                 padding: const EdgeInsets.symmetric(vertical: 48.0),
                 child: Column(
                   children: [
-                    Icon(Icons.check_circle_outline, size: 64, color: Colors.green.shade300),
+                    Icon(Icons.check_circle_outline,
+                        size: 64, color: Colors.green.shade300),
                     const SizedBox(height: 16),
-                    const Text("Sistem Aman", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    const Text("Sistem Aman",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87)),
                   ],
                 ),
               ),
@@ -492,14 +588,20 @@ class _AlertsViewState extends State<AlertsView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.red.shade200, width: 2),
-        boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.red.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 2)
+        ],
       ),
       child: Stack(
         children: [
           Positioned(
             right: 20,
             top: 20,
-            child: Icon(Icons.warning, size: 80, color: Colors.red.withOpacity(0.05)),
+            child: Icon(Icons.warning,
+                size: 80, color: Colors.red.withOpacity(0.05)),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -511,23 +613,35 @@ class _AlertsViewState extends State<AlertsView> {
                   children: [
                     _pill("KRITIS", Colors.red.shade700),
                     Text(_formatTimeAgo(alert.timestamp),
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(alert.title.contains('Suhu') ? Icons.thermostat : Icons.water_drop, color: Colors.red.shade700, size: 20),
+                    Icon(
+                        alert.title.contains('Suhu')
+                            ? Icons.thermostat
+                            : Icons.water_drop,
+                        color: Colors.red.shade700,
+                        size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(alert.title,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(alert.description,
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4)),
+                    style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 13,
+                        height: 1.4)),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -535,7 +649,8 @@ class _AlertsViewState extends State<AlertsView> {
                       child: OutlinedButton(
                         onPressed: () => _dismissAlert(alert.id),
                         style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red.shade700, side: BorderSide(color: Colors.red.shade300)),
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade300)),
                         child: const Text("Abaikan"),
                       ),
                     ),
@@ -545,11 +660,14 @@ class _AlertsViewState extends State<AlertsView> {
                         onPressed: () {
                           MockControlHelper.showSimulationDialog(context,
                               title: 'Tindak Lanjut',
-                              description: 'Kirim perintah darurat ke node ${alert.deviceId}.',
+                              description:
+                                  'Kirim perintah darurat ke node ${alert.deviceId}.',
                               icon: Icons.power_settings_new);
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
-                        child: const Text("Tindak", style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade700),
+                        child: const Text("Tindak",
+                            style: TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
@@ -577,20 +695,27 @@ class _AlertsViewState extends State<AlertsView> {
             children: [
               _pill("PERINGATAN", Colors.orange.shade700),
               Text(_formatTimeAgo(alert.timestamp),
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),
-          Text(alert.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(alert.title,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(alert.description,
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4)),
+              style: TextStyle(
+                  color: Colors.grey.shade700, fontSize: 13, height: 1.4)),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => _dismissAlert(alert.id),
-              child: Text("Tandai Dibaca", style: TextStyle(color: Colors.orange.shade700)),
+              child: Text("Tandai Dibaca",
+                  style: TextStyle(color: Colors.orange.shade700)),
             ),
           )
         ],
@@ -613,14 +738,20 @@ class _AlertsViewState extends State<AlertsView> {
             children: [
               _pill("INFO", Colors.blue.shade700),
               Text(_formatTimeAgo(alert.timestamp),
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),
-          Text(alert.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          Text(alert.title,
+              style:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(alert.description,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4)),
+              style: TextStyle(
+                  color: Colors.grey.shade600, fontSize: 13, height: 1.4)),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
@@ -628,7 +759,8 @@ class _AlertsViewState extends State<AlertsView> {
               onTap: () => _dismissAlert(alert.id),
               child: const Padding(
                 padding: EdgeInsets.all(8.0),
-                child: Text("Abaikan", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                child: Text("Abaikan",
+                    style: TextStyle(color: Colors.grey, fontSize: 13)),
               ),
             ),
           )
@@ -640,8 +772,15 @@ class _AlertsViewState extends State<AlertsView> {
   Widget _pill(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-      child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4)),
+      child: Text(text,
+          style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5)),
     );
   }
 }

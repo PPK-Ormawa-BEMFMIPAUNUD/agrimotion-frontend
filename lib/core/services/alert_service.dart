@@ -10,7 +10,8 @@ class AlertService {
   /// Mengambil data dari backend lalu mengevaluasinya
   Future<List<AlertModel>> fetchAndEvaluateAlerts() async {
     try {
-      final List<SensorData> telemetryData = await _sensorService.fetchAllLatestTelemetry();
+      final List<SensorData> telemetryData =
+          await _sensorService.fetchAllLatestTelemetry();
       return evaluateAlerts(telemetryData);
     } catch (e) {
       throw Exception('Gagal memuat data untuk dievaluasi: $e');
@@ -20,7 +21,7 @@ class AlertService {
   /// Mengevaluasi data terhadap ambang batas (threshold)
   List<AlertModel> evaluateAlerts(List<SensorData> telemetryData) {
     final List<AlertModel> alerts = [];
-    
+
     // Group telemetry berdasarkan node untuk hanya mengevaluasi data terbarunya
     final Map<String, SensorData> latestPerNode = {};
     for (var item in telemetryData) {
@@ -46,7 +47,8 @@ class AlertService {
         alerts.add(AlertModel(
           id: 'offline_${data.timestamp.millisecondsSinceEpoch}',
           title: 'Node Offline',
-          description: 'Node $nodeStr belum mengirim data selama lebih dari 1 jam. Terakhir aktif: ${data.timestamp.toLocal().toString().split('.')[0]}.',
+          description:
+              'Node $nodeStr belum mengirim data selama lebih dari 1 jam. Terakhir aktif: ${data.timestamp.toLocal().toString().split('.')[0]}.',
           timestamp: now,
           severity: AlertSeverity.info,
           deviceId: data.deviceId ?? data.deviceCode,
@@ -60,7 +62,8 @@ class AlertService {
           alerts.add(AlertModel(
             id: 'crit_moisture_${data.timestamp.millisecondsSinceEpoch}',
             title: 'Kelembaban Tanah Kritis',
-            description: 'Node $nodeStr mendeteksi kelembaban tanah sangat rendah ($moisture%). Segera aktifkan irigasi untuk mencegah kerusakan tanaman.',
+            description:
+                'Node $nodeStr mendeteksi kelembaban tanah sangat rendah ($moisture%). Segera aktifkan irigasi untuk mencegah kerusakan tanaman.',
             timestamp: data.timestamp,
             severity: AlertSeverity.critical,
             deviceId: data.deviceId ?? data.deviceCode,
@@ -69,7 +72,8 @@ class AlertService {
           alerts.add(AlertModel(
             id: 'warn_moisture_${data.timestamp.millisecondsSinceEpoch}',
             title: 'Kelembaban Tanah Berkurang',
-            description: 'Node $nodeStr melaporkan kelembaban tanah turun ke angka $moisture%.',
+            description:
+                'Node $nodeStr melaporkan kelembaban tanah turun ke angka $moisture%.',
             timestamp: data.timestamp,
             severity: AlertSeverity.warning,
             deviceId: data.deviceId ?? data.deviceCode,
@@ -84,7 +88,8 @@ class AlertService {
           alerts.add(AlertModel(
             id: 'crit_temp_${data.timestamp.millisecondsSinceEpoch}',
             title: 'Suhu Udara Ekstrem',
-            description: 'Node $nodeStr mendeteksi suhu mencapai $temp°C. Suhu ini dapat membahayakan daun. Segera periksa ventilasi.',
+            description:
+                'Node $nodeStr mendeteksi suhu mencapai $temp°C. Suhu ini dapat membahayakan daun. Segera periksa ventilasi.',
             timestamp: data.timestamp,
             severity: AlertSeverity.critical,
             deviceId: data.deviceId ?? data.deviceCode,
@@ -104,11 +109,23 @@ class AlertService {
 
     // Urutkan alert berdasarkan tingkat keparahan (Critical -> Warning -> Info) lalu berdasarkan waktu
     alerts.sort((a, b) {
-      if (a.severity == AlertSeverity.critical && b.severity != AlertSeverity.critical) return -1;
-      if (b.severity == AlertSeverity.critical && a.severity != AlertSeverity.critical) return 1;
-      if (a.severity == AlertSeverity.warning && b.severity == AlertSeverity.info) return -1;
-      if (b.severity == AlertSeverity.warning && a.severity == AlertSeverity.info) return 1;
-      
+      if (a.severity == AlertSeverity.critical &&
+          b.severity != AlertSeverity.critical) {
+        return -1;
+      }
+      if (b.severity == AlertSeverity.critical &&
+          a.severity != AlertSeverity.critical) {
+        return 1;
+      }
+      if (a.severity == AlertSeverity.warning &&
+          b.severity == AlertSeverity.info) {
+        return -1;
+      }
+      if (b.severity == AlertSeverity.warning &&
+          a.severity == AlertSeverity.info) {
+        return 1;
+      }
+
       return b.timestamp.compareTo(a.timestamp); // Terbaru di atas
     });
 

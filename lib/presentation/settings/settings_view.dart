@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mqtt_client/mqtt_client.dart';
 import '../../core/services/mqtt_service.dart';
 import '../../core/utils/mock_control_helper.dart';
 
@@ -14,11 +13,11 @@ class _SettingsViewState extends State<SettingsView> {
   bool _drainageValve = false;
   bool _fertilizerInjector = false;
   bool _irrigationPump = false;
-  
+
   double _soilMoistureThreshold = 25.0;
   double _maxTempThreshold = 35.0;
   double _minLightThreshold = 200.0;
-  
+
   bool _droughtAlert = true;
   bool _pestAlert = true;
   bool _dailyReport = false;
@@ -147,7 +146,8 @@ class _SettingsViewState extends State<SettingsView> {
               MockControlHelper.showSimulationSnackBar(
                 context,
                 featureName: 'Kontrol Katup Drainase',
-                description: 'Di lahan, tombol ini akan mengirim perintah otomatis ke ESP32 melalui MQTT untuk membuka/menutup katup drainase.',
+                description:
+                    'Di lahan, tombol ini akan mengirim perintah otomatis ke ESP32 melalui MQTT untuk membuka/menutup katup drainase.',
               );
             },
           ),
@@ -162,7 +162,8 @@ class _SettingsViewState extends State<SettingsView> {
               MockControlHelper.showSimulationSnackBar(
                 context,
                 featureName: 'Kontrol Injektor Pupuk',
-                description: 'Di lahan, injektor pupuk akan diaktifkan melalui relay yang terhubung ke ESP32. Dosis disesuaikan dengan pembacaan sensor NPK.',
+                description:
+                    'Di lahan, injektor pupuk akan diaktifkan melalui relay yang terhubung ke ESP32. Dosis disesuaikan dengan pembacaan sensor NPK.',
               );
             },
           ),
@@ -177,7 +178,8 @@ class _SettingsViewState extends State<SettingsView> {
               MockControlHelper.showSimulationDialog(
                 context,
                 title: 'Kontrol Pompa Irigasi',
-                description: 'Di lahan, pompa irigasi utama akan diaktifkan/dinonaktifkan melalui relay ESP32. Sistem otomatis berhenti saat kelembaban tanah mencapai ambang batas yang ditentukan.',
+                description:
+                    'Di lahan, pompa irigasi utama akan diaktifkan/dinonaktifkan melalui relay ESP32. Sistem otomatis berhenti saat kelembaban tanah mencapai ambang batas yang ditentukan.',
                 icon: Icons.water_drop,
               );
             },
@@ -211,7 +213,8 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
@@ -247,7 +250,8 @@ class _SettingsViewState extends State<SettingsView> {
               MockControlHelper.showSimulationSnackBar(
                 context,
                 featureName: 'Ambang Kelembaban Tanah',
-                description: 'Ambang batas diatur ke ${val.toInt()}%. Di lahan, irigasi otomatis akan aktif saat kelembaban tanah turun di bawah nilai ini.',
+                description:
+                    'Ambang batas diatur ke ${val.toInt()}%. Di lahan, irigasi otomatis akan aktif saat kelembaban tanah turun di bawah nilai ini.',
               );
             },
           ),
@@ -264,7 +268,8 @@ class _SettingsViewState extends State<SettingsView> {
               MockControlHelper.showSimulationSnackBar(
                 context,
                 featureName: 'Ambang Suhu',
-                description: 'Ambang batas suhu maksimum diatur ke ${val.toInt()}°C.',
+                description:
+                    'Ambang batas suhu maksimum diatur ke ${val.toInt()}°C.',
               );
             },
           ),
@@ -281,7 +286,8 @@ class _SettingsViewState extends State<SettingsView> {
               MockControlHelper.showSimulationSnackBar(
                 context,
                 featureName: 'Ambang Cahaya',
-                description: 'Ambang batas intensitas cahaya minimum diatur ke ${val.toInt()} Lux.',
+                description:
+                    'Ambang batas intensitas cahaya minimum diatur ke ${val.toInt()} Lux.',
               );
             },
           ),
@@ -487,7 +493,8 @@ class _SettingsViewState extends State<SettingsView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(key, style: const TextStyle(fontSize: 15, color: Colors.black54)),
-        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        Text(value,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
       ],
     );
   }

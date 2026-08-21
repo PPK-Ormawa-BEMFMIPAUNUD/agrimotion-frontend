@@ -80,13 +80,17 @@ class WebSidebar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Column(
               children: [
-                _sidebarItem(Icons.dashboard_outlined, Icons.dashboard_rounded, "Dashboard", 0),
+                _sidebarItem(Icons.dashboard_outlined, Icons.dashboard_rounded,
+                    "Dashboard", 0),
                 const SizedBox(height: 6),
-                _sidebarItem(Icons.analytics_outlined, Icons.analytics_rounded, "Analitik", 1),
+                _sidebarItem(Icons.analytics_outlined, Icons.analytics_rounded,
+                    "Analitik", 1),
                 const SizedBox(height: 6),
-                _sidebarItem(Icons.notifications_none_rounded, Icons.notifications_rounded, "Peringatan", 2),
+                _sidebarItem(Icons.notifications_none_rounded,
+                    Icons.notifications_rounded, "Peringatan", 2),
                 const SizedBox(height: 6),
-                _sidebarItem(Icons.router_outlined, Icons.router_rounded, "Perangkat", 3),
+                _sidebarItem(Icons.router_outlined, Icons.router_rounded,
+                    "Perangkat", 3),
               ],
             ),
           ),
@@ -138,7 +142,8 @@ class WebSidebar extends StatelessWidget {
     );
   }
 
-  Widget _sidebarItem(IconData iconUnselected, IconData iconSelected, String title, int index) {
+  Widget _sidebarItem(
+      IconData iconUnselected, IconData iconSelected, String title, int index) {
     final isSelected = selectedIndex == index;
     return InkWell(
       onTap: () => onItemSelected(index),
@@ -147,9 +152,7 @@ class WebSidebar extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryLight
-              : Colors.transparent,
+          color: isSelected ? AppTheme.primaryLight : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -157,13 +160,16 @@ class WebSidebar extends StatelessWidget {
             Icon(
               isSelected ? iconSelected : iconUnselected,
               size: 20,
-              color: isSelected ? AppTheme.primaryColor : const Color(0xFF64748B),
+              color:
+                  isSelected ? AppTheme.primaryColor : const Color(0xFF64748B),
             ),
             const SizedBox(width: 14),
             Text(
               title,
               style: TextStyle(
-                color: isSelected ? AppTheme.primaryColor : const Color(0xFF334155),
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : const Color(0xFF334155),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 fontSize: 13.5,
               ),
@@ -174,4 +180,3 @@ class WebSidebar extends StatelessWidget {
     );
   }
 }
-

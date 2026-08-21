@@ -44,11 +44,14 @@ class TopAppBar extends StatelessWidget {
             child: TextField(
               decoration: InputDecoration(
                 hintText: "Cari perangkat, peringatan...",
-                hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                hintStyle:
+                    const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search,
+                    size: 18, color: Color(0xFF64748B)),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -59,7 +62,8 @@ class TopAppBar extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+                  borderSide: const BorderSide(
+                      color: AppTheme.primaryColor, width: 1.5),
                 ),
               ),
             ),
@@ -105,7 +109,8 @@ class TopAppBar extends StatelessWidget {
                 CircleAvatar(
                   radius: 14,
                   backgroundColor: AppTheme.primaryColor,
-                  child: const Icon(Icons.person, size: 16, color: Colors.white),
+                  child:
+                      const Icon(Icons.person, size: 16, color: Colors.white),
                 ),
                 const SizedBox(width: 8),
                 const Text(
@@ -144,4 +149,3 @@ class TopAppBar extends StatelessWidget {
     );
   }
 }
-

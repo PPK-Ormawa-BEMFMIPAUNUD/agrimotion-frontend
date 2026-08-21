@@ -40,7 +40,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
 
     try {
       final data = await _sensorService.fetchTelemetryList(limit: 50);
-      
+
       double totalMoisture = 0;
       double totalTemp = 0;
       double totalNpk = 0;
@@ -51,8 +51,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         totalMoisture += item.soilMoisture ?? 0;
         totalTemp += item.temperature ?? 0;
         if (item.npkN != null || item.npkP != null || item.npkK != null) {
-           totalNpk += (item.npkN ?? 0) + (item.npkP ?? 0) + (item.npkK ?? 0);
-           npkCount++;
+          totalNpk += (item.npkN ?? 0) + (item.npkP ?? 0) + (item.npkK ?? 0);
+          npkCount++;
         }
         if (item.deviceId != null || item.deviceCode != null) {
           uniqueDevices.add(item.deviceId ?? item.deviceCode!);
@@ -66,7 +66,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
           _meanTemp = totalTemp / data.length;
         }
         if (npkCount > 0) {
-           _avgNpk = (totalNpk / 3) / npkCount;
+          _avgNpk = (totalNpk / 3) / npkCount;
         }
         _activeSensors = uniqueDevices.length;
         _isLoading = false;
@@ -89,11 +89,13 @@ class _AnalyticsViewState extends State<AnalyticsView> {
 
     String csv = "TIMESTAMP,NODE_ID,FARM_ID,MOISTURE,TEMPERATURE,PH,NPK\n";
     for (var item in _sensorDataList) {
-       csv += "${item.timestamp.toIso8601String()},${item.deviceCode ?? item.deviceId ?? ''},${item.farmId ?? ''},${item.soilMoisture ?? ''},${item.temperature ?? ''},${item.ph ?? ''},${item.npkDisplay}\n";
+      csv +=
+          "${item.timestamp.toIso8601String()},${item.deviceCode ?? item.deviceId ?? ''},${item.farmId ?? ''},${item.soilMoisture ?? ''},${item.temperature ?? ''},${item.ph ?? ''},${item.npkDisplay}\n";
     }
 
     try {
-      final String fileName = 'agrimotion_laporan_${DateTime.now().millisecondsSinceEpoch}';
+      final String fileName =
+          'agrimotion_laporan_${DateTime.now().millisecondsSinceEpoch}';
       final bytes = Uint8List.fromList(utf8.encode(csv));
 
       final path = await FileSaver.instance.saveFile(
@@ -106,8 +108,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(path.isNotEmpty 
-                ? 'Laporan CSV berhasil disimpan ke:\n$path' 
+            content: Text(path.isNotEmpty
+                ? 'Laporan CSV berhasil disimpan ke:\n$path'
                 : 'Laporan CSV berhasil diunduh!'),
             duration: const Duration(seconds: 5),
             backgroundColor: Colors.green,
@@ -144,9 +146,17 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               _buildHeader(),
               const SizedBox(height: 24),
               if (_isLoading)
-                const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppTheme.primaryColor)))
+                const Center(
+                    child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: CircularProgressIndicator(
+                            color: AppTheme.primaryColor)))
               else if (_errorMessage != null)
-                Center(child: Padding(padding: EdgeInsets.all(40), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))))
+                Center(
+                    child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Text(_errorMessage!,
+                            style: const TextStyle(color: Colors.red))))
               else ...[
                 _buildKpiRow(constraints.maxWidth),
                 const SizedBox(height: 24),
@@ -287,16 +297,28 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       spacing: 24,
       runSpacing: 24,
       children: [
-        _kpiCard(cardWidth, "RATA-RATA KELEMBABAN TANAH", "${_avgMoisture.toStringAsFixed(1)}%", "Rata-rata saat ini",
-            Icons.water_drop_outlined, true, true),
-        _kpiCard(cardWidth, "RATA-RATA SUHU", "${_meanTemp.toStringAsFixed(1)}°C", "Rata-rata saat ini",
-            Icons.thermostat_outlined, false, true,
+        _kpiCard(
+            cardWidth,
+            "RATA-RATA KELEMBABAN TANAH",
+            "${_avgMoisture.toStringAsFixed(1)}%",
+            "Rata-rata saat ini",
+            Icons.water_drop_outlined,
+            true,
+            true),
+        _kpiCard(
+            cardWidth,
+            "RATA-RATA SUHU",
+            "${_meanTemp.toStringAsFixed(1)}°C",
+            "Rata-rata saat ini",
+            Icons.thermostat_outlined,
+            false,
+            true,
             iconColor: Colors.red),
         _kpiCard(cardWidth, "INDEKS NUTRISI NPK", _avgNpk.toStringAsFixed(1),
             "Rata-rata saat ini", Icons.science_outlined, false, false,
             valueSub: ""),
-        _kpiCard(cardWidth, "SENSOR AKTIF", "$_activeSensors", "Node terdeteksi",
-            Icons.sensors, true, true,
+        _kpiCard(cardWidth, "SENSOR AKTIF", "$_activeSensors",
+            "Node terdeteksi", Icons.sensors, true, true,
             valueSub: "", isStatusPoint: true),
       ],
     );
@@ -593,17 +615,22 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: "Filter ID node...",
-                            hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-                            prefixIcon: Icon(Icons.filter_list, size: 16, color: Colors.grey.shade500),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            hintStyle: TextStyle(
+                                fontSize: 13, color: Colors.grey.shade400),
+                            prefixIcon: Icon(Icons.filter_list,
+                                size: 16, color: Colors.grey.shade500),
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 0),
                             filled: true,
                             fillColor: Colors.grey.shade50,
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(6),
-                                borderSide: BorderSide(color: Colors.grey.shade300)),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300)),
                             enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(6),
-                                borderSide: BorderSide(color: Colors.grey.shade300)),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300)),
                           ),
                         ),
                       ),
@@ -626,17 +653,22 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                       child: TextField(
                         decoration: InputDecoration(
                           hintText: "Filter ID node...",
-                          hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-                          prefixIcon: Icon(Icons.filter_list, size: 16, color: Colors.grey.shade500),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                          hintStyle: TextStyle(
+                              fontSize: 13, color: Colors.grey.shade400),
+                          prefixIcon: Icon(Icons.filter_list,
+                              size: 16, color: Colors.grey.shade500),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 0),
                           filled: true,
                           fillColor: Colors.grey.shade50,
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(color: Colors.grey.shade300)),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300)),
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(6),
-                              borderSide: BorderSide(color: Colors.grey.shade300)),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300)),
                         ),
                       ),
                     ),
@@ -677,22 +709,32 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                   // Data Rows
                   if (_sensorDataList.isEmpty)
                     const TableRow(children: [
-                      Padding(padding: EdgeInsets.all(16), child: Text("Tidak ada data tersedia.")),
-                      Text(""), Text(""), Text(""), Text(""), Text("")
+                      Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text("Tidak ada data tersedia.")),
+                      Text(""),
+                      Text(""),
+                      Text(""),
+                      Text(""),
+                      Text("")
                     ])
                   else
                     ..._sensorDataList.map((item) {
-                      final isNormal = (item.soilMoisture ?? 0) > 30; // simplistic logic
+                      final isNormal =
+                          (item.soilMoisture ?? 0) > 30; // simplistic logic
                       return _tdRow(
-                        item.formattedTimestamp.split(',').last.trim(), // short time 
-                        item.deviceCode ?? item.deviceId ?? "-", 
-                        item.farmId?.substring(0, 8) ?? "Utama", // short farm id placeholder
-                        SensorData.formatValue(item.soilMoisture), 
-                        SensorData.formatValue(item.temperature),
-                        isNormal ? "Normal" : "Kelembaban Rendah", 
-                        isNormal,
-                        isLast: _sensorDataList.last == item
-                      );
+                          item.formattedTimestamp
+                              .split(',')
+                              .last
+                              .trim(), // short time
+                          item.deviceCode ?? item.deviceId ?? "-",
+                          item.farmId?.substring(0, 8) ??
+                              "Utama", // short farm id placeholder
+                          SensorData.formatValue(item.soilMoisture),
+                          SensorData.formatValue(item.temperature),
+                          isNormal ? "Normal" : "Kelembaban Rendah",
+                          isNormal,
+                          isLast: _sensorDataList.last == item);
                     }),
                 ],
               ),
@@ -708,7 +750,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Menampilkan 1-${_sensorDataList.length.clamp(0, 50)} dari ${_sensorDataList.length} data",
+                Text(
+                    "Menampilkan 1-${_sensorDataList.length.clamp(0, 50)} dari ${_sensorDataList.length} data",
                     style:
                         TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                 Row(
@@ -800,7 +843,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         MockControlHelper.showSimulationSnackBar(
           context,
           featureName: 'Navigasi Halaman',
-          description: 'Di lahan, tabel akan memuat halaman data berikutnya dari database sensor.',
+          description:
+              'Di lahan, tabel akan memuat halaman data berikutnya dari database sensor.',
         );
       },
       child: Container(

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
+export 'package:mqtt_client/mqtt_client.dart' show MqttConnectionState;
+
 import '../config/mqtt_config.dart';
 
 /// Singleton MQTT service for AGRI-MOTION.
@@ -100,7 +102,8 @@ class MqttService {
     _client!.connectionMessage = connMessage;
 
     try {
-      debugPrint('[MqttService] Connecting to ${MqttConfig.brokerHost}:${MqttConfig.brokerPort} ...');
+      debugPrint(
+          '[MqttService] Connecting to ${MqttConfig.brokerHost}:${MqttConfig.brokerPort} ...');
       connectionState.value = MqttConnectionState.connecting;
 
       await _client!.connect();
@@ -150,7 +153,8 @@ class MqttService {
   /// Returns `true` if the message was published, `false` if not connected.
   bool publishCommand(String command) {
     if (!isConnected) {
-      debugPrint('[MqttService] Cannot publish — not connected. Command: $command');
+      debugPrint(
+          '[MqttService] Cannot publish — not connected. Command: $command');
       return false;
     }
 

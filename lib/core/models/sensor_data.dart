@@ -84,14 +84,13 @@ class SensorData {
         device?['code'] as String? ??
         parsedDeviceId;
 
-    final String? parsedDeviceName = device?['name'] as String? ??
-        device?['deviceName'] as String?;
+    final String? parsedDeviceName =
+        device?['name'] as String? ?? device?['deviceName'] as String?;
 
     final String? parsedFarmId = device?['farmId']?.toString();
 
-    final DateTime? parsedLastOnline = device != null
-        ? _parseTimestampNullable(device['lastOnline'])
-        : null;
+    final DateTime? parsedLastOnline =
+        device != null ? _parseTimestampNullable(device['lastOnline']) : null;
 
     return SensorData(
       id: json['id']?.toString(),
@@ -106,11 +105,15 @@ class SensorData {
       lux: _toDoubleNullable(json['lux']),
       temperature: _toDoubleNullable(json['temperature']),
       humidity: _toDoubleNullable(json['humidity']),
-      soilMoisture: _toDoubleNullable(json['soilMoisture'] ?? json['soil_moisture']),
+      soilMoisture:
+          _toDoubleNullable(json['soilMoisture'] ?? json['soil_moisture']),
       ph: _toDoubleNullable(json['ph']),
-      npkN: _toDoubleNullable(json['nitrogen'] ?? json['npk_n'] ?? json['npkN']),
-      npkP: _toDoubleNullable(json['phosphorus'] ?? json['npk_p'] ?? json['npkP']),
-      npkK: _toDoubleNullable(json['potassium'] ?? json['npk_k'] ?? json['npkK']),
+      npkN:
+          _toDoubleNullable(json['nitrogen'] ?? json['npk_n'] ?? json['npkN']),
+      npkP: _toDoubleNullable(
+          json['phosphorus'] ?? json['npk_p'] ?? json['npkP']),
+      npkK:
+          _toDoubleNullable(json['potassium'] ?? json['npk_k'] ?? json['npkK']),
       timestamp: _parseTimestamp(json['timestamp'] ?? json['createdAt']),
     );
   }

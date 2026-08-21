@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mqtt_client/mqtt_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/config/api_config.dart';
 import '../../core/config/demplot_config.dart';
