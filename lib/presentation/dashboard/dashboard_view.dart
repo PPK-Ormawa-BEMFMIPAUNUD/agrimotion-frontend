@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/config/api_config.dart';
 import '../../core/config/demplot_config.dart';
 import '../../core/models/sensor_data.dart';
 import '../../core/services/sensor_service.dart';
+import '../../core/services/mqtt_service.dart';
+import '../../core/utils/pump_command.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -50,6 +53,9 @@ class _DashboardViewState extends State<DashboardView>
 
   final SensorService _sensorService = SensorService();
 
+  /// Subscription to ESP32 MQTT status messages.
+  StreamSubscription<String>? _mqttStatusSubscription;
+
   // ---------------------------------------------------------------------------
   // Lifecycle — AppLifecycleState Observer
   // ---------------------------------------------------------------------------
@@ -74,12 +80,14 @@ class _DashboardViewState extends State<DashboardView>
     WidgetsBinding.instance.addObserver(this);
     _fetchAllTelemetry();
     _startPollingTimer();
+    _listenMqttStatus();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollingTimer?.cancel();
+    _mqttStatusSubscription?.cancel();
     _sensorService.dispose();
     super.dispose();
   }
@@ -220,30 +228,28 @@ class _DashboardViewState extends State<DashboardView>
     _fetchAllTelemetry();
   }
 
-
   // ---------------------------------------------------------------------------
   // Computed Getters
   // ---------------------------------------------------------------------------
 
   /// The currently selected Demplot configuration.
-  Demplot get _currentDemplot =>
-      DemplotConfig.demplots[_selectedDemplotIndex];
+  Demplot get _currentDemplot => DemplotConfig.demplots[_selectedDemplotIndex];
 
   /// The currently active device node within the selected Demplot.
-  DeviceNode get _currentDevice =>
-      _currentDemplot.devices[_selectedNodeIndex];
+  DeviceNode get _currentDevice => _currentDemplot.devices[_selectedNodeIndex];
 
   /// The telemetry data for the currently active device node.
-  SensorData? get _currentSensorData =>
-      _telemetryMap[_currentDevice.deviceId];
+  SensorData? get _currentSensorData => _telemetryMap[_currentDevice.deviceId];
 
   // ---------------------------------------------------------------------------
-  // Spraying Control State (Pupuk Cair & Pestisida)
+  // Spraying Control State (Pupuk Cair, Pestisida & Air)
   // ---------------------------------------------------------------------------
   bool _isSprayingFertilizer = false;
   bool _isSprayingPesticide = false;
+  bool _isSprayingWater = false;
   int _fertilizerDuration = 10; // default in seconds
   int _pesticideDuration = 10; // default in seconds
+  int _waterDuration = 10; // default in seconds
   int _sprayRemainingSeconds = 0;
   Timer? _sprayCountdownTimer;
   String? _activeSprayingType;
@@ -266,14 +272,46 @@ class _DashboardViewState extends State<DashboardView>
   ];
 
   void _startSpraying({required String type, required int durationSeconds}) {
-    if (_isSprayingFertilizer || _isSprayingPesticide) {
+    if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Penyemprotan lain sedang aktif! Harap tunggu atau hentikan dahulu.'),
+          content: Text(
+              'Penyemprotan lain sedang aktif! Harap tunggu atau hentikan dahulu.'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
+    }
+
+    // ── MQTT: Publish ON command to ESP32 ──
+    final mqttType = type == 'Pupuk Cair'
+        ? 'PUPUK'
+        : type == 'Siram Air'
+            ? 'AIR'
+            : 'PESTI';
+    final onCommand = PumpCommand.build(
+      demplotIndex: _selectedDemplotIndex,
+      type: mqttType,
+      turnOn: true,
+    );
+    final published = MqttService.instance.publishCommand(onCommand);
+
+    if (!published) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.wifi_off, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Expanded(
+                  child: Text(
+                      'MQTT belum terhubung. Perintah tidak dikirim ke ESP32.')),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      // Still allow local UI to proceed — user can see the timer
     }
 
     setState(() {
@@ -281,6 +319,8 @@ class _DashboardViewState extends State<DashboardView>
       _sprayRemainingSeconds = durationSeconds;
       if (type == 'Pupuk Cair') {
         _isSprayingFertilizer = true;
+      } else if (type == 'Siram Air') {
+        _isSprayingWater = true;
       } else {
         _isSprayingPesticide = true;
       }
@@ -294,15 +334,27 @@ class _DashboardViewState extends State<DashboardView>
       }
       if (_sprayRemainingSeconds <= 1) {
         timer.cancel();
+
+        // ── MQTT: Publish OFF command when timer completes ──
+        final offCommand = PumpCommand.build(
+          demplotIndex: _selectedDemplotIndex,
+          type: mqttType,
+          turnOn: false,
+        );
+        MqttService.instance.publishCommand(offCommand);
+
         setState(() {
           _isSprayingFertilizer = false;
           _isSprayingPesticide = false;
+          _isSprayingWater = false;
           _activeSprayingType = null;
           _sprayRemainingSeconds = 0;
           _sprayLogs.insert(0, {
             "type": type,
             "demplot": '${_currentDemplot.name} (${_currentDemplot.commodity})',
-            "duration": "${durationSeconds}s",
+            "duration": type == 'Siram Air'
+                ? '${durationSeconds ~/ 60}m'
+                : '${durationSeconds}s',
             "time": "Baru saja",
             "status": "Selesai"
           });
@@ -314,7 +366,8 @@ class _DashboardViewState extends State<DashboardView>
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Text('Penyemprotan $type selesai pada ${_currentDemplot.name}!'),
+                Text(
+                    'Penyemprotan $type selesai pada ${_currentDemplot.name}!'),
               ],
             ),
             backgroundColor: AppTheme.primaryColor,
@@ -331,9 +384,26 @@ class _DashboardViewState extends State<DashboardView>
   void _stopSpraying() {
     _sprayCountdownTimer?.cancel();
     final stoppedType = _activeSprayingType ?? 'Penyemprotan';
+
+    // ── MQTT: Publish OFF command for the active spray type ──
+    if (_activeSprayingType != null) {
+      final mqttType = _activeSprayingType == 'Pupuk Cair'
+          ? 'PUPUK'
+          : _activeSprayingType == 'Siram Air'
+              ? 'AIR'
+              : 'PESTI';
+      final offCommand = PumpCommand.build(
+        demplotIndex: _selectedDemplotIndex,
+        type: mqttType,
+        turnOn: false,
+      );
+      MqttService.instance.publishCommand(offCommand);
+    }
+
     setState(() {
       _isSprayingFertilizer = false;
       _isSprayingPesticide = false;
+      _isSprayingWater = false;
       _activeSprayingType = null;
       _sprayRemainingSeconds = 0;
     });
@@ -344,6 +414,89 @@ class _DashboardViewState extends State<DashboardView>
         backgroundColor: Colors.red.shade700,
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // MQTT Status Listener — feedback from ESP32
+  // ---------------------------------------------------------------------------
+
+  /// Listens to `agrimotion/device/pumps/status` for real-time feedback from ESP32.
+  /// Displays a themed SnackBar when a status message is received.
+  void _listenMqttStatus() {
+    _mqttStatusSubscription =
+        MqttService.instance.onStatusReceived.listen((status) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.zero,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          duration: const Duration(seconds: 4),
+          content: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.memory,
+                    color: Color(0xFF4ADE80),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Feedback ESP32',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        status,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -429,8 +582,8 @@ class _DashboardViewState extends State<DashboardView>
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     decoration: BoxDecoration(
                       gradient: isSelected ? AppTheme.primaryGradient : null,
                       color: isSelected ? null : Colors.transparent,
@@ -438,7 +591,8 @@ class _DashboardViewState extends State<DashboardView>
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               )
@@ -584,8 +738,7 @@ class _DashboardViewState extends State<DashboardView>
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
@@ -644,7 +797,8 @@ class _DashboardViewState extends State<DashboardView>
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.2),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             )
@@ -906,7 +1060,8 @@ class _DashboardViewState extends State<DashboardView>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.wifi, size: 14, color: Color(0xFF64748B)),
+                      const Icon(Icons.wifi,
+                          size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
@@ -1188,9 +1343,7 @@ class _DashboardViewState extends State<DashboardView>
             _kpiCard(
               cardWidth,
               'SUHU UDARA',
-              data != null
-                  ? SensorData.formatValue(data.temperature)
-                  : null,
+              data != null ? SensorData.formatValue(data.temperature) : null,
               '°C',
               Icons.thermostat_outlined,
               const Color(0xFFEF4444),
@@ -1208,9 +1361,7 @@ class _DashboardViewState extends State<DashboardView>
             _kpiCard(
               cardWidth,
               'KELEMBABAN UDARA',
-              data != null
-                  ? SensorData.formatValue(data.humidity)
-                  : null,
+              data != null ? SensorData.formatValue(data.humidity) : null,
               '%',
               Icons.water_drop_outlined,
               const Color(0xFF0284C7),
@@ -1226,9 +1377,7 @@ class _DashboardViewState extends State<DashboardView>
             _kpiCard(
               cardWidth,
               'KELEMBABAN TANAH',
-              data != null
-                  ? SensorData.formatValue(data.soilMoisture)
-                  : null,
+              data != null ? SensorData.formatValue(data.soilMoisture) : null,
               '%',
               Icons.grass_outlined,
               AppTheme.primaryColor,
@@ -1408,8 +1557,7 @@ class _DashboardViewState extends State<DashboardView>
         final spacing = 12.0;
 
         if (isWide) {
-          final cardW =
-              ((width - spacing * 3) / 4).clamp(0.0, double.infinity);
+          final cardW = ((width - spacing * 3) / 4).clamp(0.0, double.infinity);
           if (cardW <= 0) return const SizedBox.shrink();
 
           return Wrap(
@@ -1447,8 +1595,7 @@ class _DashboardViewState extends State<DashboardView>
             ],
           );
         } else {
-          final cardW =
-              ((width - spacing) / 2).clamp(0.0, double.infinity);
+          final cardW = ((width - spacing) / 2).clamp(0.0, double.infinity);
           if (cardW <= 0) return const SizedBox.shrink();
 
           return Wrap(
@@ -1565,7 +1712,8 @@ class _DashboardViewState extends State<DashboardView>
   // SPRAY CONTROL SECTION — Pupuk Cair & Pestisida Aktuator
   // ============================================================================
   Widget _buildSprayControlSection() {
-    final isSpraying = _isSprayingFertilizer || _isSprayingPesticide;
+    final isSpraying =
+        _isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1618,47 +1766,70 @@ class _DashboardViewState extends State<DashboardView>
                   ],
                 ),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isSpraying
-                      ? const Color(0xFFFEF3C7)
-                      : const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSpraying
-                        ? const Color(0xFFF59E0B)
-                        : const Color(0xFF16A34A),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSpraying
-                            ? const Color(0xFFD97706)
-                            : const Color(0xFF16A34A),
-                      ),
+              ValueListenableBuilder<MqttConnectionState>(
+                valueListenable: MqttService.instance.connectionState,
+                builder: (context, mqttState, _) {
+                  final bool mqttConnected =
+                      mqttState == MqttConnectionState.connected;
+
+                  Color badgeBg;
+                  Color badgeBorder;
+                  Color dotColor;
+                  Color textColor;
+                  String label;
+
+                  if (isSpraying) {
+                    badgeBg = const Color(0xFFFEF3C7);
+                    badgeBorder = const Color(0xFFF59E0B);
+                    dotColor = const Color(0xFFD97706);
+                    textColor = const Color(0xFFB45309);
+                    label = 'MENYEMPROT';
+                  } else if (mqttConnected) {
+                    badgeBg = const Color(0xFFDCFCE7);
+                    badgeBorder = const Color(0xFF16A34A);
+                    dotColor = const Color(0xFF16A34A);
+                    textColor = const Color(0xFF15803D);
+                    label = 'MQTT TERHUBUNG';
+                  } else {
+                    badgeBg = const Color(0xFFFEE2E2);
+                    badgeBorder = const Color(0xFFFCA5A5);
+                    dotColor = const Color(0xFFDC2626);
+                    textColor = const Color(0xFFB91C1C);
+                    label = 'MQTT TERPUTUS';
+                  }
+
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: badgeBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: badgeBorder, width: 1),
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      isSpraying ? 'MENYEMPROT' : 'RELAY SIAP',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: isSpraying
-                            ? const Color(0xFFB45309)
-                            : const Color(0xFF15803D),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: dotColor,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -1734,7 +1905,7 @@ class _DashboardViewState extends State<DashboardView>
 
           const SizedBox(height: 18),
 
-          // Dua Kartu Kontrol
+          // Tiga Kartu Kontrol
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 550;
@@ -1775,6 +1946,28 @@ class _DashboardViewState extends State<DashboardView>
                 ),
               );
 
+              final waterCard = _sprayCard(
+                title: 'Siram Air Saja',
+                subtitle: 'Penyiraman air bersih tanpa campuran',
+                icon: Icons.water_drop,
+                accentColor: const Color(0xFF0284C7),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                durationOptions: const [5, 10, 15],
+                durationUnit: 'm',
+                selectedDuration: _waterDuration,
+                onDurationChanged: (val) =>
+                    setState(() => _waterDuration = val),
+                isThisSpraying: _isSprayingWater,
+                onAction: () => _confirmAndSpray(
+                  type: 'Siram Air',
+                  durationSeconds: _waterDuration * 60,
+                ),
+              );
+
               if (isWide) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1782,6 +1975,8 @@ class _DashboardViewState extends State<DashboardView>
                     Expanded(child: fertilizerCard),
                     const SizedBox(width: 14),
                     Expanded(child: pesticideCard),
+                    const SizedBox(width: 14),
+                    Expanded(child: waterCard),
                   ],
                 );
               } else {
@@ -1790,6 +1985,8 @@ class _DashboardViewState extends State<DashboardView>
                     fertilizerCard,
                     const SizedBox(height: 14),
                     pesticideCard,
+                    const SizedBox(height: 14),
+                    waterCard,
                   ],
                 );
               }
@@ -1841,11 +2038,15 @@ class _DashboardViewState extends State<DashboardView>
                           Icon(
                             log['type'] == 'Pupuk Cair'
                                 ? Icons.eco
-                                : Icons.shield,
+                                : log['type'] == 'Siram Air'
+                                    ? Icons.water_drop
+                                    : Icons.shield,
                             size: 14,
                             color: log['type'] == 'Pupuk Cair'
                                 ? AppTheme.primaryColor
-                                : const Color(0xFFD97706),
+                                : log['type'] == 'Siram Air'
+                                    ? const Color(0xFF0284C7)
+                                    : const Color(0xFFD97706),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -1884,6 +2085,8 @@ class _DashboardViewState extends State<DashboardView>
     required Function(int) onDurationChanged,
     required bool isThisSpraying,
     required VoidCallback onAction,
+    List<int> durationOptions = const [5, 10, 15],
+    String durationUnit = 's',
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1946,17 +2149,15 @@ class _DashboardViewState extends State<DashboardView>
               const SizedBox(width: 8),
               Wrap(
                 spacing: 6,
-                children: [5, 10, 15].map((sec) {
-                  final isSelected = selectedDuration == sec;
+                children: durationOptions.map((val) {
+                  final isSelected = selectedDuration == val;
                   return GestureDetector(
-                    onTap: () => onDurationChanged(sec),
+                    onTap: () => onDurationChanged(val),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? accentColor
-                            : Colors.white,
+                        color: isSelected ? accentColor : Colors.white,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isSelected
@@ -1965,7 +2166,7 @@ class _DashboardViewState extends State<DashboardView>
                         ),
                       ),
                       child: Text(
-                        '${sec}s',
+                        '$val$durationUnit',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -2022,21 +2223,42 @@ class _DashboardViewState extends State<DashboardView>
     required String type,
     required int durationSeconds,
   }) {
+    // Determine icon and color based on type
+    final IconData typeIcon;
+    final Color typeColor;
+    if (type == 'Pupuk Cair') {
+      typeIcon = Icons.eco;
+      typeColor = AppTheme.primaryColor;
+    } else if (type == 'Siram Air') {
+      typeIcon = Icons.water_drop;
+      typeColor = const Color(0xFF0284C7);
+    } else {
+      typeIcon = Icons.shield;
+      typeColor = const Color(0xFFD97706);
+    }
+
+    final String actionLabel =
+        type == 'Siram Air' ? 'penyiraman air bersih' : 'penyemprotan $type';
+
+    final String durationLabel =
+        type == 'Siram Air' ? 'Durasi Siram' : 'Durasi Semprot';
+
+    final String buttonLabel =
+        type == 'Siram Air' ? 'Mulai Siram' : 'Mulai Semprot';
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(
-              type == 'Pupuk Cair' ? Icons.eco : Icons.shield,
-              color: type == 'Pupuk Cair'
-                  ? AppTheme.primaryColor
-                  : const Color(0xFFD97706),
-            ),
+            Icon(typeIcon, color: typeColor),
             const SizedBox(width: 10),
-            Text('Konfirmasi $type',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Text('Konfirmasi $type',
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.bold)),
+            ),
           ],
         ),
         content: Column(
@@ -2044,7 +2266,7 @@ class _DashboardViewState extends State<DashboardView>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Anda akan mengaktifkan aktuator penyemprotan $type dengan parameter:',
+              'Anda akan mengaktifkan aktuator $actionLabel dengan parameter:',
               style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
             ),
             const SizedBox(height: 12),
@@ -2062,7 +2284,12 @@ class _DashboardViewState extends State<DashboardView>
                   const SizedBox(height: 6),
                   _confirmRow('Node Aktif', _currentDevice.label),
                   const SizedBox(height: 6),
-                  _confirmRow('Durasi Semprot', '$durationSeconds Detik'),
+                  _confirmRow(
+                    durationLabel,
+                    type == 'Siram Air'
+                        ? '${durationSeconds ~/ 60} Menit'
+                        : '$durationSeconds Detik',
+                  ),
                 ],
               ),
             ),
@@ -2071,7 +2298,8 @@ class _DashboardViewState extends State<DashboardView>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+            child:
+                const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2079,13 +2307,12 @@ class _DashboardViewState extends State<DashboardView>
               _startSpraying(type: type, durationSeconds: durationSeconds);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: type == 'Pupuk Cair'
-                  ? AppTheme.primaryColor
-                  : const Color(0xFFD97706),
+              backgroundColor: typeColor,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Mulai Semprot'),
+            child: Text(buttonLabel),
           ),
         ],
       ),
@@ -2096,9 +2323,13 @@ class _DashboardViewState extends State<DashboardView>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        Text(label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
         Text(value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A))),
       ],
     );
   }
@@ -2165,8 +2396,7 @@ class _DashboardViewState extends State<DashboardView>
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryLight,
                   borderRadius: BorderRadius.circular(8),
@@ -2221,8 +2451,7 @@ class _DashboardViewState extends State<DashboardView>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(6)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
           ),
         ),
         const SizedBox(height: 8),
@@ -2377,4 +2606,3 @@ class _DashboardViewState extends State<DashboardView>
     );
   }
 }
-

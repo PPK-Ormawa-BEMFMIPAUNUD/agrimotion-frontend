@@ -89,9 +89,7 @@ class SensorService {
   /// Returns a list of [SensorData] for nodes belonging to the given farm UUID.
   Future<List<SensorData>> fetchTelemetryByFarmId(String farmId) async {
     final allData = await fetchAllLatestTelemetry();
-    return allData
-        .where((item) => item.farmId == farmId)
-        .toList();
+    return allData.where((item) => item.farmId == farmId).toList();
   }
 
   /// Fetches the latest sensor telemetry data from the production backend
@@ -136,11 +134,13 @@ class SensorService {
         if (deviceId != null &&
             deviceId.isNotEmpty &&
             deviceId.toUpperCase() != 'ALL') {
-          final filtered = items.where((item) =>
-              (item.deviceId != null &&
-                  item.deviceId!.toLowerCase() == deviceId.toLowerCase()) ||
-              (item.deviceCode != null &&
-                  item.deviceCode!.toLowerCase() == deviceId.toLowerCase())).toList();
+          final filtered = items
+              .where((item) =>
+                  (item.deviceId != null &&
+                      item.deviceId!.toLowerCase() == deviceId.toLowerCase()) ||
+                  (item.deviceCode != null &&
+                      item.deviceCode!.toLowerCase() == deviceId.toLowerCase()))
+              .toList();
           if (filtered.isNotEmpty) {
             items = filtered;
           }
@@ -199,11 +199,13 @@ class SensorService {
         if (deviceId != null &&
             deviceId.isNotEmpty &&
             deviceId.toUpperCase() != 'ALL') {
-          final filtered = items.where((item) =>
-              (item.deviceId != null &&
-                  item.deviceId!.toLowerCase() == deviceId.toLowerCase()) ||
-              (item.deviceCode != null &&
-                  item.deviceCode!.toLowerCase() == deviceId.toLowerCase())).toList();
+          final filtered = items
+              .where((item) =>
+                  (item.deviceId != null &&
+                      item.deviceId!.toLowerCase() == deviceId.toLowerCase()) ||
+                  (item.deviceCode != null &&
+                      item.deviceCode!.toLowerCase() == deviceId.toLowerCase()))
+              .toList();
           if (filtered.isNotEmpty) {
             items = filtered;
           }

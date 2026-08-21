@@ -1,9 +1,15 @@
-# Miscellaneous
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 *.class
 *.log
 *.pyc
 *.swp
-.DS_Store
 .atom/
 .build/
 .buildlog/
@@ -11,6 +17,15 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# CocoaPods
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.podspec
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/Flutter.podspec
+
 
 # IntelliJ related
 *.iml
