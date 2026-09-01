@@ -1,6 +1,6 @@
 # agrimotion
 
-A new Flutter project.
+AgriMotion - Sistem pemantauan pertanian pintar (Smart Farming) berbasis IoT dan telemetri sensor real-time.
 
 ## Getting Started
 

@@ -3,7 +3,7 @@ class AppConstants {
   AppConstants._();
 
   /// Name of the application.
-  static const String appName = 'AgriMotion';
+  static const String appName = 'AGRI-MOTION';
 
   /// Application tagline.
   static const String appTagline = 'Smart Agriculture IoT Platform';

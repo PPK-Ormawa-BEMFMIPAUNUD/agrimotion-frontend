@@ -155,7 +155,15 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
         _totalTransmissions = totalTx;
         _recentActivities = recentAct;
 
-        _serverStatus = (cachedHealth is Map && cachedHealth['status'] == 'ok') ? 'Online' : 'Offline';
+        bool cachedOnline = false;
+        if (cachedHealth is Map) {
+          if (cachedHealth['status'] == 'ok' ||
+              cachedHealth['data']?['status'] == 'ok' ||
+              cachedHealth['success'] == true) {
+            cachedOnline = true;
+          }
+        }
+        _serverStatus = cachedOnline ? 'Online' : 'Offline';
 
         List latestList = [];
         if (cachedLatestTelemetry is List) {
@@ -207,39 +215,42 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
           {
             'id': '11111111-1111-1111-1111-111111111111',
             'name': 'Demplot 1',
-            'commodity': 'Padi',
-            'location': 'Bedugul, Tabanan (1.240 mdpl)',
+            'commodity': 'Bunga Pacah',
+            'emoji': '🌸',
+            'location': 'Desa Nyanglan, Banjarangkan, Klungkung',
             'devices': [
               {
                 'id': '10000000-0000-0000-0000-000000000001',
                 'deviceCode': 'node-1a',
-                'status': 'OFFLINE',
+                'status': 'ONLINE',
               }
             ]
           },
           {
             'id': '22222222-2222-2222-2222-222222222222',
             'name': 'Demplot 2',
-            'commodity': 'Bunga Pacar Air',
-            'location': 'Candi Kuning, Tabanan (1.180 mdpl)',
+            'commodity': 'Sawi',
+            'emoji': '🥬',
+            'location': 'Desa Nyanglan, Banjarangkan, Klungkung',
             'devices': [
               {
                 'id': '20000000-0000-0000-0000-000000000001',
                 'deviceCode': 'node-2a',
-                'status': 'OFFLINE',
+                'status': 'ONLINE',
               }
             ]
           },
           {
             'id': '33333333-3333-3333-3333-333333333333',
             'name': 'Demplot 3',
-            'commodity': 'Sayuran Hijau',
-            'location': 'Pancasari, Sukasada (1.210 mdpl)',
+            'commodity': 'Cabai',
+            'emoji': '🌶️',
+            'location': 'Desa Nyanglan, Banjarangkan, Klungkung',
             'devices': [
               {
                 'id': '30000000-0000-0000-0000-000000000001',
                 'deviceCode': 'node-3a',
-                'status': 'OFFLINE',
+                'status': 'ONLINE',
               }
             ]
           },
@@ -301,7 +312,15 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
         _totalTransmissions = telemetryHistData is Map ? (telemetryHistData['meta']?['total'] ?? 0) : 0;
         _recentActivities = telemetryHistData is Map ? (telemetryHistData['data'] as List? ?? []) : [];
 
-        _serverStatus = (healthData is Map && healthData['status'] == 'ok') ? 'Online' : 'Offline';
+        bool isServerOnline = false;
+        if (healthData is Map) {
+          if (healthData['status'] == 'ok' ||
+              healthData['data']?['status'] == 'ok' ||
+              healthData['success'] == true) {
+            isServerOnline = true;
+          }
+        }
+        _serverStatus = isServerOnline ? 'Online' : 'Offline';
 
         _latestTelemetry = latestTelemetryList;
 
@@ -592,26 +611,7 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
     BoxConstraints constraints,
     bool isDark,
   ) {
-    final width = constraints.maxWidth;
-    final int columns;
-    if (width >= AppConstants.desktopBreakpoint) {
-      columns = 4;
-    } else if (width >= 640) {
-      columns = 2;
-    } else {
-      columns = 2;
-    }
-
-    const double spacing = 16.0;
-    final double cardWidth = (width - (spacing * (columns - 1))) / columns;
-
-    if (_isLoading) {
-      return Wrap(
-        spacing: spacing,
-        runSpacing: spacing,
-        children: List.generate(4, (index) => _buildSkeletonBlock(cardWidth, 120, 16, isDark)),
-      );
-    }
+    final bool isDesktop = constraints.maxWidth >= 900;
 
     final kpiCards = [
       MetricCard(
@@ -621,7 +621,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
         isPositiveTrend: true,
         icon: Icons.grass_rounded,
         iconColor: AppColors.primaryEmerald,
-        width: cardWidth,
         onTap: () => context.go(AppRoutes.farms),
       ),
       MetricCard(
@@ -631,7 +630,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
         isPositiveTrend: true,
         icon: Icons.cloud_upload_rounded,
         iconColor: AppColors.secondary,
-        width: cardWidth,
         onTap: () => context.go(AppRoutes.serverMonitor),
       ),
       MetricCard(
@@ -641,7 +639,6 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
         isPositiveTrend: _activeDevices > 0,
         icon: Icons.sensors_rounded,
         iconColor: AppColors.infoBlue,
-        width: cardWidth,
         onTap: () => context.go(AppRoutes.farms),
       ),
       MetricCard(
@@ -651,15 +648,49 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
         isPositiveTrend: _serverStatus == 'Online',
         icon: Icons.dns_rounded,
         iconColor: _serverStatus == 'Online' ? AppColors.optimalGreen : AppColors.dangerRose,
-        width: cardWidth,
         onTap: () => context.go(AppRoutes.serverMonitor),
       ),
     ];
 
+    if (_isLoading) {
+      if (isDesktop) {
+        return Row(
+          children: List.generate(4, (index) => Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: index < 3 ? 16 : 0),
+              child: _buildSkeletonBlock(double.infinity, 120, 16, isDark),
+            ),
+          )),
+        );
+      } else {
+        final double cardWidth = (constraints.maxWidth - 16) / 2;
+        return Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: List.generate(4, (index) => _buildSkeletonBlock(cardWidth, 120, 16, isDark)),
+        );
+      }
+    }
+
+    if (isDesktop) {
+      return Row(
+        children: [
+          Expanded(child: kpiCards[0]),
+          const SizedBox(width: 16),
+          Expanded(child: kpiCards[1]),
+          const SizedBox(width: 16),
+          Expanded(child: kpiCards[2]),
+          const SizedBox(width: 16),
+          Expanded(child: kpiCards[3]),
+        ],
+      );
+    }
+
+    final double cardWidth = (constraints.maxWidth - 16) / 2;
     return Wrap(
-      spacing: spacing,
-      runSpacing: spacing,
-      children: kpiCards,
+      spacing: 16,
+      runSpacing: 16,
+      children: kpiCards.map((card) => SizedBox(width: cardWidth, child: card)).toList(),
     );
   }
 
@@ -672,18 +703,7 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
     BoxConstraints constraints,
     bool isDark,
   ) {
-    final width = constraints.maxWidth;
-    final int columns;
-    if (width >= AppConstants.desktopBreakpoint) {
-      columns = 4;
-    } else if (width >= 640) {
-      columns = 2;
-    } else {
-      columns = 1;
-    }
-
-    const double spacing = 16.0;
-    final double cardWidth = (width - (spacing * (columns - 1))) / columns;
+    final bool isDesktop = constraints.maxWidth >= 900;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -716,16 +736,32 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
           ],
         ),
         const SizedBox(height: 12.0),
-        Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: _quickActions.map((action) {
-            return SizedBox(
-              width: cardWidth,
-              child: _buildQuickActionCard(context, action, isDark),
-            );
-          }).toList(),
-        ),
+        if (isDesktop)
+          Row(
+            children: [
+              Expanded(child: _buildQuickActionCard(context, _quickActions[0], isDark)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildQuickActionCard(context, _quickActions[1], isDark)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildQuickActionCard(context, _quickActions[2], isDark)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildQuickActionCard(context, _quickActions[3], isDark)),
+            ],
+          )
+        else
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: _quickActions.map((action) {
+              final double cardWidth = constraints.maxWidth >= 600
+                  ? (constraints.maxWidth - 16) / 2
+                  : constraints.maxWidth;
+              return SizedBox(
+                width: cardWidth,
+                child: _buildQuickActionCard(context, action, isDark),
+              );
+            }).toList(),
+          ),
       ],
     );
   }
@@ -998,6 +1034,7 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
     dynamic farm,
     bool isDark,
   ) {
+    final emoji = farm['emoji'] ?? (farm['name']?.toString().contains('1') == true ? '🌸' : (farm['name']?.toString().contains('2') == true ? '🥬' : '🌶️'));
     final devices = farm['devices'] as List? ?? [];
     String nodeCode = '-';
     Map<String, dynamic>? latestData;
@@ -1055,8 +1092,8 @@ class _OverviewPageState extends ConsumerState<OverviewPage>
               children: [
                 Row(
                   children: [
-                    const Text(
-                      '🌱',
+                    Text(
+                      emoji,
                       style: TextStyle(fontSize: 20),
                     ),
                     const SizedBox(width: 8),

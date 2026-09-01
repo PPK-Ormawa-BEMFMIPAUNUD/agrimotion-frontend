@@ -64,12 +64,12 @@ class DemplotConfig {
   DemplotConfig._(); // Prevent instantiation
 
   static const List<Demplot> demplots = [
-    // ── Demplot 1: Padi (Node 1A) ──────────────────────────────────────
+    // ── Demplot 1: Bunga Pacah (Node 1A / Node 1B) ──────────────────────
     Demplot(
       farmId: '11111111-1111-1111-1111-111111111111',
       name: 'Demplot 1',
-      commodity: 'Padi',
-      icon: '🌾',
+      commodity: 'Bunga Pacah',
+      icon: '🌸',
       devices: [
         DeviceNode(
           deviceId: '10000000-0000-0000-0000-000000000001',
@@ -80,12 +80,12 @@ class DemplotConfig {
       ],
     ),
 
-    // ── Demplot 2: Bunga Pacar Air / Bunga Pacah (Node 2A) ─────────────
+    // ── Demplot 2: Sawi Organik (Node 2A) ──────────────────────────────
     Demplot(
       farmId: '22222222-2222-2222-2222-222222222222',
       name: 'Demplot 2',
-      commodity: 'Bunga Pacar Air',
-      icon: '🌸',
+      commodity: 'Sawi',
+      icon: '🥬',
       devices: [
         DeviceNode(
           deviceId: '20000000-0000-0000-0000-000000000001',
@@ -96,12 +96,12 @@ class DemplotConfig {
       ],
     ),
 
-    // ── Demplot 3: Sayuran Hijau (Node 3A) ─────────────────────────────
+    // ── Demplot 3: Cabai Rawit (Node 3A) ───────────────────────────────
     Demplot(
       farmId: '33333333-3333-3333-3333-333333333333',
       name: 'Demplot 3',
-      commodity: 'Sayuran Hijau',
-      icon: '🥬',
+      commodity: 'Cabai',
+      icon: '🌶️',
       devices: [
         DeviceNode(
           deviceId: '30000000-0000-0000-0000-000000000001',

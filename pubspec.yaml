@@ -1,5 +1,5 @@
 name: agrimotion
-description: "A new Flutter project."
+description: "AgriMotion - Sistem pemantauan pertanian pintar (Smart Farming) berbasis IoT dan telemetri sensor real-time."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

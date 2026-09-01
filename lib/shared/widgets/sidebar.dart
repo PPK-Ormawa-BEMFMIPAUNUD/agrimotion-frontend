@@ -273,67 +273,50 @@ class _AdminSidebarState extends State<AdminSidebar> {
             _isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
           // Logo Icon Container
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryEmerald.withValues(alpha: 0.28),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset(
+              'assets/logo.png',
+              width: 38,
+              height: 38,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.eco_rounded,
-                color: Colors.white,
-                size: 24,
+                child: const Center(
+                  child: Icon(
+                    Icons.eco_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
               ),
             ),
           ),
 
-          // Animated Brand Title and Tagline
+          // Animated Brand Title
           if (!_isCollapsed) ...[
             const SizedBox(width: 12),
             Expanded(
               child: AnimatedOpacity(
                 duration: _animationDuration,
                 opacity: _isCollapsed ? 0.0 : 1.0,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppConstants.appName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                        color: isDark
-                            ? AppColors.textDarkPrimary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Admin Portal',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? AppColors.textDarkSecondary
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'AGRI-MOTION',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: isDark
+                        ? AppColors.textDarkPrimary
+                        : AppColors.textPrimary,
+                  ),
                 ),
               ),
             ),

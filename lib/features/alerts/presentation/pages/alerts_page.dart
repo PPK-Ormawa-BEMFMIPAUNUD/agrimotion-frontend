@@ -321,10 +321,10 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
   }
 
   String _getLocationForDevice(String deviceId) {
-    if (deviceId.contains('10000000')) return 'Demplot 1';
-    if (deviceId.contains('20000000')) return 'Demplot 2';
-    if (deviceId.contains('30000000')) return 'Demplot 3';
-    return 'Lokasi Perangkat';
+    if (deviceId.contains('10000000') || deviceId.toLowerCase().contains('node-1')) return 'Demplot 1 (Bunga Pacah)';
+    if (deviceId.contains('20000000') || deviceId.toLowerCase().contains('node-2')) return 'Demplot 2 (Sawi Organik)';
+    if (deviceId.contains('30000000') || deviceId.toLowerCase().contains('node-3')) return 'Demplot 3 (Cabai Rawit)';
+    return 'Demplot Nyanglan';
   }
 
   void _refreshAlerts() {

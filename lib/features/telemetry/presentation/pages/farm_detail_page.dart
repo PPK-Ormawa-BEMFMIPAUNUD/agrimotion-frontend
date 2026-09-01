@@ -51,35 +51,35 @@ const List<_DemplotMetadata> _demplotsMetadata = [
   _DemplotMetadata(
     index: 0,
     name: 'Demplot 1',
-    commodity: 'Padi',
-    icon: '🌾',
+    commodity: 'Bunga Pacah',
+    icon: '🌸',
     nodeId: 'node-1a',
     deviceId: '10000000-0000-0000-0000-000000000001',
-    location: 'Bedugul, Tabanan (1.240 mdpl)',
+    location: 'Desa Nyanglan, Banjarangkan, Klungkung',
     area: '400 m²',
-    plantAge: '42 HST',
+    plantAge: 'Tanaman Hias & Upakara',
   ),
   _DemplotMetadata(
     index: 1,
     name: 'Demplot 2',
-    commodity: 'Bunga Pacar Air',
-    icon: '🌸',
+    commodity: 'Sawi',
+    icon: '🥬',
     nodeId: 'node-2a',
     deviceId: '20000000-0000-0000-0000-000000000001',
-    location: 'Candi Kuning, Tabanan (1.180 mdpl)',
-    area: '550 m²',
-    plantAge: '28 HST',
+    location: 'Desa Nyanglan, Banjarangkan, Klungkung',
+    area: '500 m²',
+    plantAge: 'Sayuran Hijau Organik',
   ),
   _DemplotMetadata(
     index: 2,
     name: 'Demplot 3',
-    commodity: 'Sayuran Hijau',
-    icon: '🥬',
+    commodity: 'Cabai',
+    icon: '🌶️',
     nodeId: 'node-3a',
     deviceId: '30000000-0000-0000-0000-000000000001',
-    location: 'Pancasari, Sukasada (1.210 mdpl)',
+    location: 'Desa Nyanglan, Banjarangkan, Klungkung',
     area: '350 m²',
-    plantAge: '65 HST',
+    plantAge: 'Hortikultura Unggulan',
   ),
 ];
 
@@ -150,6 +150,8 @@ class _DailyAverage {
   final double potassium;
   final double temperature;
   final double humidity;
+  final int totalTransmissions;
+  final SensorStatus status;
 
   const _DailyAverage({
     required this.date,
@@ -160,7 +162,47 @@ class _DailyAverage {
     required this.potassium,
     required this.temperature,
     required this.humidity,
+    this.totalTransmissions = 1,
+    required this.status,
   });
+
+  String get formattedDate {
+    try {
+      return DateFormat('dd MMM yyyy', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('dd MMM yyyy').format(date);
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'date': DateFormat('yyyy-MM-dd').format(date),
+      'formattedDate': formattedDate,
+      'soilMoisture': moisture,
+      'ph': ph,
+      'nitrogen': nitrogen,
+      'phosphorus': phosphorus,
+      'potassium': potassium,
+      'temperature': temperature,
+      'humidity': humidity,
+      'totalTransmissions': totalTransmissions,
+      'status': status.label,
+    };
+  }
+
+  String toCsvRow(int no) {
+    return '$no,'
+        '"$formattedDate",'
+        '${moisture.toStringAsFixed(1)},'
+        '${ph.toStringAsFixed(2)},'
+        '${nitrogen.toStringAsFixed(0)},'
+        '${phosphorus.toStringAsFixed(0)},'
+        '${potassium.toStringAsFixed(0)},'
+        '${temperature.toStringAsFixed(1)},'
+        '${humidity.toStringAsFixed(1)},'
+        '$totalTransmissions,'
+        '"${status.label}"';
+  }
 }
 
 class _DemplotTelemetryData {
@@ -391,15 +433,25 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
 
     if (count == 0) return null;
 
+    final avgMoisture = double.parse((totalMoisture / count).toStringAsFixed(1));
+    final avgPh = double.parse((totalPh / count).toStringAsFixed(2));
+    final avgN = double.parse((totalN / count).toStringAsFixed(1));
+    final avgP = double.parse((totalP / count).toStringAsFixed(1));
+    final avgK = double.parse((totalK / count).toStringAsFixed(1));
+    final avgTemp = double.parse((totalTemp / count).toStringAsFixed(1));
+    final avgHum = double.parse((totalHumidity / count).toStringAsFixed(1));
+
     return _DailyAverage(
       date: date,
-      moisture: double.parse((totalMoisture / count).toStringAsFixed(1)),
-      ph: double.parse((totalPh / count).toStringAsFixed(2)),
-      nitrogen: double.parse((totalN / count).toStringAsFixed(1)),
-      phosphorus: double.parse((totalP / count).toStringAsFixed(1)),
-      potassium: double.parse((totalK / count).toStringAsFixed(1)),
-      temperature: double.parse((totalTemp / count).toStringAsFixed(1)),
-      humidity: double.parse((totalHumidity / count).toStringAsFixed(1)),
+      moisture: avgMoisture,
+      ph: avgPh,
+      nitrogen: avgN,
+      phosphorus: avgP,
+      potassium: avgK,
+      temperature: avgTemp,
+      humidity: avgHum,
+      totalTransmissions: count,
+      status: _determineStatus(avgMoisture, avgPh, avgTemp, avgHum),
     );
   }
 
@@ -703,16 +755,16 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
   Future<void> _exportCsv() async {
     if (_activeData == null) return;
     final active = _activeData!;
-    final records = _getFilteredRecords(active.tableRecords);
+    final records = _getFilteredDailyAverages();
 
     final StringBuffer buffer = StringBuffer();
-    buffer.writeln('"Waktu","Node ID","Kelembaban Tanah (%)","pH Tanah","Nitrogen (mg/kg)","Fosfor (mg/kg)","Kalium (mg/kg)","Suhu (°C)","Kelembaban Udara (%)","Status"');
-    for (final r in records) {
-      buffer.writeln(r.toCsvRow());
+    buffer.writeln('"No","Tanggal","Rata-rata Kelembaban Tanah (%)","Rata-rata pH","Nitrogen (mg/kg)","Fosfor (mg/kg)","Kalium (mg/kg)","Suhu (°C)","Kelembaban Udara (%)","Total Transmisi","Status"');
+    for (int i = 0; i < records.length; i++) {
+      buffer.writeln(records[i].toCsvRow(i + 1));
     }
 
     final String csvContent = buffer.toString();
-    final String fileName = 'agrimotion_telemetri_${active.name.toLowerCase().replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}';
+    final String fileName = 'agrimotion_riwayat_harian_${active.name.toLowerCase().replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}';
 
     try {
       final Uint8List bytes = Uint8List.fromList(utf8.encode(csvContent));
@@ -747,7 +799,7 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
   Future<void> _exportJson() async {
     if (_activeData == null) return;
     final active = _activeData!;
-    final records = _getFilteredRecords(active.tableRecords);
+    final records = _getFilteredDailyAverages();
 
     final exportData = {
       'demplot': {
@@ -758,12 +810,12 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
         'location': active.location,
       },
       'exportedAt': DateTime.now().toIso8601String(),
-      'totalRecords': records.length,
-      'telemetryLogs': records.map((r) => r.toJson()).toList(),
+      'totalDays': records.length,
+      'dailyAverages': records.map((r) => r.toJson()).toList(),
     };
 
     final String jsonContent = const JsonEncoder.withIndent('  ').convert(exportData);
-    final String fileName = 'agrimotion_telemetri_${active.name.toLowerCase().replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}';
+    final String fileName = 'agrimotion_riwayat_harian_${active.name.toLowerCase().replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}';
 
     try {
       final Uint8List bytes = Uint8List.fromList(utf8.encode(jsonContent));
@@ -914,24 +966,7 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
     );
   }
 
-  List<_TelemetryRecord> _getFilteredRecords(List<_TelemetryRecord> source) {
-    final query = _searchController.text.trim().toLowerCase();
 
-    return source.where((record) {
-      if (_selectedStatusFilter != null && record.status != _selectedStatusFilter) {
-        return false;
-      }
-      if (query.isNotEmpty) {
-        final matchesNode = record.nodeId.toLowerCase().contains(query);
-        final matchesStatus = record.status.label.toLowerCase().contains(query);
-        final matchesDate = record.formattedDateTime.toLowerCase().contains(query);
-        final matchesMoisture = record.moisture.toString().contains(query);
-        final matchesPh = record.ph.toString().contains(query);
-        return matchesNode || matchesStatus || matchesDate || matchesMoisture || matchesPh;
-      }
-      return true;
-    }).toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1867,14 +1902,33 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
     );
   }
 
+    List<_DailyAverage> _getFilteredDailyAverages() {
+    final search = _searchController.text.trim().toLowerCase();
+    final list = _dailyAveragesMap.values.toList()..sort((a, b) => b.date.compareTo(a.date));
+
+    return list.where((avg) {
+      if (_selectedStatusFilter != null && avg.status != _selectedStatusFilter) {
+        return false;
+      }
+      if (search.isNotEmpty) {
+        final dateFormatted = avg.formattedDate.toLowerCase();
+        final rawDate = DateFormat('yyyy-MM-dd').format(avg.date).toLowerCase();
+        if (!dateFormatted.contains(search) && !rawDate.contains(search)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
   Widget _buildDataTableSection(BuildContext context, bool isDark, _DemplotTelemetryData activeDemplot) {
-    final filtered = _getFilteredRecords(activeDemplot.tableRecords);
+    final filtered = _getFilteredDailyAverages();
     final int totalRecords = filtered.length;
     final int totalPages = (totalRecords / _pageSize).ceil().clamp(1, 999);
     if (_currentPage > totalPages) _currentPage = totalPages;
     final int startIndex = ((_currentPage - 1) * _pageSize).clamp(0, totalRecords);
     final int endIndex = (startIndex + _pageSize).clamp(0, totalRecords);
-    final List<_TelemetryRecord> pageRecords = totalRecords > 0 ? filtered.sublist(startIndex, endIndex) : [];
+    final List<_DailyAverage> pageRecords = totalRecords > 0 ? filtered.sublist(startIndex, endIndex) : [];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1901,7 +1955,7 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
                   controller: _searchController,
                   onChanged: (_) => setState(() => _currentPage = 1),
                   decoration: InputDecoration(
-                    hintText: 'Cari tanggal, node...',
+                    hintText: 'Cari tanggal (cth: 24 Agu)...',
                     hintStyle: TextStyle(fontSize: 12, color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary),
                     prefixIcon: const Icon(Icons.search, size: 18),
                     suffixIcon: _searchController.text.isNotEmpty
@@ -1973,7 +2027,9 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Log Riwayat Telemetri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.textDarkPrimary : AppColors.textPrimary)),
+                    Text('Riwayat Data Telemetri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.textDarkPrimary : AppColors.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text('Rekapitulasi rata-rata parameter sensor per hari', style: TextStyle(fontSize: 11.5, color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary)),
                     const SizedBox(height: 12),
                     searchField,
                     const SizedBox(height: 8),
@@ -1987,9 +2043,9 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Log Riwayat Telemetri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.textDarkPrimary : AppColors.textPrimary)),
+                      Text('Riwayat Data Telemetri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.textDarkPrimary : AppColors.textPrimary)),
                       const SizedBox(height: 2),
-                      Text('Rekaman data sensor berkala', style: TextStyle(fontSize: 11.5, color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary)),
+                      Text('Rekapitulasi rata-rata parameter sensor per hari', style: TextStyle(fontSize: 11.5, color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary)),
                     ],
                   ),
                   const Spacer(),
@@ -2025,14 +2081,14 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
                     headingTextStyle: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: isDark ? AppColors.textDarkPrimary : AppColors.textPrimary, letterSpacing: 0.3),
                     dataTextStyle: TextStyle(fontSize: 12, color: isDark ? AppColors.textDarkPrimary : AppColors.textPrimary),
                     columns: const [
-                      DataColumn(label: Text('WAKTU')),
-                      DataColumn(label: Text('NODE ID')),
-                      DataColumn(label: Text('MOISTURE (%)'), numeric: true),
-                      DataColumn(label: Text('pH'), numeric: true),
-                      DataColumn(label: Text('N (mg/kg)'), numeric: true),
-                      DataColumn(label: Text('P (mg/kg)'), numeric: true),
-                      DataColumn(label: Text('K (mg/kg)'), numeric: true),
-                      DataColumn(label: Text('SUHU (°C)'), numeric: true),
+                      DataColumn(label: Text('NO')),
+                      DataColumn(label: Text('TANGGAL')),
+                      DataColumn(label: Text('RATA2 KELEMBABAN'), numeric: true),
+                      DataColumn(label: Text('RATA2 pH'), numeric: true),
+                      DataColumn(label: Text('N-P-K (mg/kg)'), numeric: true),
+                      DataColumn(label: Text('RATA2 SUHU'), numeric: true),
+                      DataColumn(label: Text('RATA2 HUMIDITY'), numeric: true),
+                      DataColumn(label: Text('TRANSMISI'), numeric: true),
                       DataColumn(label: Text('STATUS')),
                     ],
                     rows: pageRecords.isEmpty
@@ -2042,23 +2098,34 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
                               const DataCell(Text('-')), const DataCell(Text('-')), const DataCell(Text('-')), const DataCell(Text('-')), const DataCell(Text('-')), const DataCell(Text('-')), const DataCell(Text('-')), const DataCell(Text('-')),
                             ])
                           ]
-                        : pageRecords.map((record) {
+                        : pageRecords.asMap().entries.map((entry) {
+                            final idx = startIndex + entry.key + 1;
+                            final record = entry.value;
                             return DataRow(
                               cells: [
-                                DataCell(Text(record.formattedDateTime, style: const TextStyle(fontWeight: FontWeight.w500))),
+                                DataCell(Text('$idx', style: const TextStyle(fontWeight: FontWeight.w600))),
                                 DataCell(
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: isDark ? AppColors.elevatedDark : const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(4)),
-                                    child: Text(record.nodeId, style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.w600)),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.primaryEmerald),
+                                      const SizedBox(width: 6),
+                                      Text(record.formattedDate, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    ],
                                   ),
                                 ),
                                 DataCell(Text('${record.moisture.toStringAsFixed(1)}%', style: TextStyle(fontWeight: FontWeight.w600, color: record.moisture < 40.0 ? AppColors.warningAmber : null))),
                                 DataCell(Text(record.ph.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.w600))),
-                                DataCell(Text(record.nitrogen.toStringAsFixed(0))),
-                                DataCell(Text(record.phosphorus.toStringAsFixed(0))),
-                                DataCell(Text(record.potassium.toStringAsFixed(0))),
+                                DataCell(Text('${record.nitrogen.toStringAsFixed(0)} / ${record.phosphorus.toStringAsFixed(0)} / ${record.potassium.toStringAsFixed(0)}')),
                                 DataCell(Text('${record.temperature.toStringAsFixed(1)}°C', style: TextStyle(color: record.temperature > 32.0 ? AppColors.warningAmber : null))),
+                                DataCell(Text('${record.humidity.toStringAsFixed(1)}%')),
+                                DataCell(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(color: isDark ? AppColors.elevatedDark : const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(4)),
+                                    child: Text('${record.totalTransmissions} data', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                                  ),
+                                ),
                                 DataCell(StatusBadge(status: record.status, fontSize: 10)),
                               ],
                             );
@@ -2072,7 +2139,7 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Menampilkan $startIndex-$endIndex dari $totalRecords data', style: TextStyle(fontSize: 12, color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary)),
+              Text('Menampilkan $startIndex-$endIndex dari $totalRecords hari', style: TextStyle(fontSize: 12, color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary)),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
