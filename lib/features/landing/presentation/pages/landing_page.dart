@@ -193,13 +193,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                   child: const _TeamSection(),
                 ),
 
-                // 5. Call To Action Banner
-                _CallToActionBanner(
-                  onAdminLoginPressed: () => _scrollToSection(_fiturKey),
-                  onContactPressed: () => _scrollToSection(_kontakKey),
-                ),
-
-                // 6. Footer Section
+                // 5. Footer Section
                 Container(
                   key: _kontakKey,
                   child: _Footer(
@@ -313,12 +307,13 @@ class _StickyNavbar extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              // Brand Logo
+              // Brand Logo (Left)
               _BrandLogo(onTap: onNavBeranda),
 
-              // Desktop Navigation Links
-              if (!isMobile) ...[
+              // Desktop Navigation Links (Right)
+              if (!isMobile)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -332,10 +327,8 @@ class _StickyNavbar extends StatelessWidget {
                     const SizedBox(width: 28),
                     _NavLink(label: 'Kontak', onTap: onNavKontak),
                   ],
-                ),
-
-                const SizedBox.shrink(),
-              ] else ...[
+                )
+              else
                 // Mobile Hamburger Toggle
                 IconButton(
                   onPressed: onToggleMenu,
@@ -345,7 +338,6 @@ class _StickyNavbar extends StatelessWidget {
                     size: 26,
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -2554,132 +2546,7 @@ class _AffiliationBadge extends StatelessWidget {
   }
 }
 
-// =============================================================================
-// CALL TO ACTION BANNER
-// =============================================================================
 
-class _CallToActionBanner extends StatelessWidget {
-  final VoidCallback onAdminLoginPressed;
-  final VoidCallback onContactPressed;
-
-  const _CallToActionBanner({
-    required this.onAdminLoginPressed,
-    required this.onContactPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isMobile = screenWidth < 768;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 20 : 36,
-        vertical: 60,
-      ),
-      color: AppColors.backgroundLight,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Container(
-            padding: EdgeInsets.all(isMobile ? 28 : 48),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryEmerald.withValues(alpha: 0.25),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Siap Memantau Lahan Pertanian Anda?',
-                        style: GoogleFonts.inter(
-                          fontSize: isMobile ? 22 : 30,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Akses dashboard admin untuk memantau data telemetri, mengatur aktuator pompa irigasi, dan mengelola pengguna.',
-                        style: GoogleFonts.inter(
-                          fontSize: isMobile ? 13 : 15,
-                          color: Colors.white.withValues(alpha: 0.9),
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 10,
-                        children: <Widget>[
-                          ElevatedButton.icon(
-                            onPressed: onAdminLoginPressed,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: AppColors.primaryEmerald,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 22,
-                                vertical: 14,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            icon: const Icon(Icons.login_rounded, size: 18),
-                            label: Text(
-                              'Pelajari Inovasi',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: onContactPressed,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white, width: 1.5),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 14,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                            label: Text(
-                              'Hubungi Tim Kami',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // =============================================================================
 // FOOTER
