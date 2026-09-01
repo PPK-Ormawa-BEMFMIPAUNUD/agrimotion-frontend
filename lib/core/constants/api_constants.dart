@@ -1,16 +1,16 @@
 /// Centralized API & network configuration for AgriMotion.
 ///
 /// All backend endpoint paths and network tuning constants are defined here.
-/// The backend is a NestJS application running on the VPS with NO global route prefix.
+/// The backend is a NestJS application proxied via Nginx over HTTPS.
 class ApiConstants {
   ApiConstants._();
 
-  /// Base URL of the backend NestJS server.
+  /// Base URL of the backend server.
   ///
-  /// Override at build time with: `--dart-define=API_URL=http://your-server:3001`
+  /// Override at build time with: `--dart-define=API_URL=https://agrimotion.id/api`
   static const String baseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://103.174.114.65:3001',
+    defaultValue: 'https://agrimotion.id/api',
   );
 
   // ---------------------------------------------------------------------------
@@ -90,19 +90,19 @@ class ApiConstants {
   // ---------------------------------------------------------------------------
 
   /// Standard HTTP request timeout duration.
-  static const Duration requestTimeout = Duration(seconds: 8);
+  static const Duration requestTimeout = Duration(seconds: 15);
 
   /// Polling interval for live dashboard data updates.
   static const Duration pollingInterval = Duration(seconds: 10);
 
   /// Duration after which sensor data is considered stale.
-  static const Duration staleDataThreshold = Duration(minutes: 3);
+  static const Duration staleDataThreshold = Duration(minutes: 5);
 
   /// Maximum consecutive network failures before switching to backoff polling.
   static const int maxConsecutiveFailures = 3;
 
   /// Base backoff duration for reconnection attempts.
-  static const Duration reconnectBackoffBase = Duration(seconds: 15);
+  static const Duration reconnectBackoffBase = Duration(seconds: 5);
 
   /// Maximum backoff duration for reconnection attempts.
   static const Duration reconnectBackoffMax = Duration(seconds: 60);
@@ -111,14 +111,14 @@ class ApiConstants {
   // WebSocket / SSE
   // ---------------------------------------------------------------------------
 
-  /// WebSocket endpoint for real-time sensor streams.
-  static const String wsEndpoint = 'ws://103.174.114.65:3001/ws';
+  /// WebSocket endpoint for real-time sensor streams (WSS).
+  static const String wsEndpoint = 'wss://agrimotion.id/ws';
 
   /// Server-Sent Events endpoint for real-time server log streaming.
   static const String sseLogsEndpoint = '$baseUrl/server/logs/sse';
 
   // ---------------------------------------------------------------------------
-  // MQTT Broker
+  // MQTT Broker (Direct TCP for Hardware/Internal)
   // ---------------------------------------------------------------------------
 
   /// MQTT broker host address.

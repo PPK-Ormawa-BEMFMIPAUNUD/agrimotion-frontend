@@ -369,49 +369,33 @@ class _BrandLogo extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryEmerald.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.eco_rounded,
-                color: Colors.white,
-                size: 20,
+            Image.asset(
+              'assets/logo.png',
+              width: 38,
+              height: 38,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.eco_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  'AgriMotion',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  'SMART AGRICULTURE IoT',
-                  style: GoogleFonts.inter(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: AppColors.primaryEmerald,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 12),
+            Text(
+              'AGRI-MOTION',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: AppColors.textPrimary,
+              ),
             ),
           ],
         ),
@@ -644,7 +628,7 @@ class _HeroSection extends StatelessWidget {
                           // Right Column: Live Telemetry Mockup Card
                           Expanded(
                             flex: 9,
-                            child: _HeroTelemetryCard(
+                            child: _HeroDemplotSlider(
                               latestTelemetry: latestTelemetry,
                               isLoading: isLoading,
                             ),
@@ -660,7 +644,7 @@ class _HeroSection extends StatelessWidget {
                             isMobile: isMobile,
                           ),
                           const SizedBox(height: 40),
-                          _HeroTelemetryCard(
+                          _HeroDemplotSlider(
                             latestTelemetry: latestTelemetry,
                             isLoading: isLoading,
                           ),
@@ -693,7 +677,7 @@ class _HeroTextContent extends StatelessWidget {
       children: <Widget>[
         // Badge
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(30),
@@ -702,38 +686,25 @@ class _HeroTextContent extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Icon(
-                Icons.spa_rounded,
-                color: Color(0xFF86EFAC),
-                size: 15,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'PPKO BEM FMIPA UNUD 2026 • Desa Nyanglan, Klungkung',
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          child: Text(
+            'PPKO BEM FMIPA UNUD 2026 • Desa Nyanglan, Klungkung',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(height: 20),
 
         // Headline
         Text(
-          'Pertanian Cerdas dengan IoT & Presisi',
+          'Pertanian Cerdas dengan Pemantauan dan Otomasi Presisi',
           style: GoogleFonts.inter(
             color: Colors.white,
-            fontSize: isMobile ? 32 : 46,
+            fontSize: isMobile ? 30 : 44,
             fontWeight: FontWeight.w800,
             height: 1.15,
             letterSpacing: -1.0,
@@ -759,7 +730,7 @@ class _HeroTextContent extends StatelessWidget {
           runSpacing: 12,
           children: <Widget>[
             ElevatedButton.icon(
-              onPressed: onExplorePressed,
+              onPressed: onLoginPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryEmerald,
@@ -773,9 +744,9 @@ class _HeroTextContent extends StatelessWidget {
                 elevation: 3,
                 shadowColor: Colors.black.withValues(alpha: 0.25),
               ),
-              icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+              icon: const Icon(Icons.menu_book_rounded, size: 18),
               label: Text(
-                'Lihat Demplot',
+                'Pelajari Program',
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -783,7 +754,7 @@ class _HeroTextContent extends StatelessWidget {
               ),
             ),
             OutlinedButton.icon(
-              onPressed: onLoginPressed,
+              onPressed: onExplorePressed,
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: const BorderSide(color: Colors.white, width: 1.5),
@@ -796,9 +767,9 @@ class _HeroTextContent extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: const Icon(Icons.lock_open_rounded, size: 18),
+              icon: const Icon(Icons.arrow_downward_rounded, size: 18),
               label: Text(
-                'Pelajari Program',
+                'Lihat Demplot',
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -851,17 +822,71 @@ class _HeroFeaturePill extends StatelessWidget {
   }
 }
 
-class _HeroTelemetryCard extends StatelessWidget {
+class _HeroDemplotSlider extends StatefulWidget {
   final Map<String, dynamic>? latestTelemetry;
   final bool isLoading;
 
-  const _HeroTelemetryCard({
+  const _HeroDemplotSlider({
     this.latestTelemetry,
     this.isLoading = false,
   });
 
   @override
+  State<_HeroDemplotSlider> createState() => _HeroDemplotSliderState();
+}
+
+class _HeroDemplotSliderState extends State<_HeroDemplotSlider> {
+  int _currentIndex = 0;
+
+  final List<Map<String, dynamic>> _demplots = [
+    {
+      'name': 'Demplot 1: Bunga Pacah',
+      'emoji': '🌸',
+      'commodity': 'Tanaman Hias & Upakara',
+      'moisture': '65.2',
+      'ph': '6.8',
+      'temp': '27.8',
+      'humidity': '76',
+      'status': 'Optimal',
+    },
+    {
+      'name': 'Demplot 2: Sawi Organik',
+      'emoji': '🥬',
+      'commodity': 'Sayuran Daun Presisi',
+      'moisture': '68.4',
+      'ph': '6.5',
+      'temp': '26.5',
+      'humidity': '78',
+      'status': 'Optimal',
+    },
+    {
+      'name': 'Demplot 3: Cabai Rawit',
+      'emoji': '🌶️',
+      'commodity': 'Hortikultura Unggulan',
+      'moisture': '58.7',
+      'ph': '6.7',
+      'temp': '28.2',
+      'humidity': '72',
+      'status': 'Optimal',
+    },
+  ];
+
+  void _next() {
+    setState(() {
+      _currentIndex = (_currentIndex + 1) % _demplots.length;
+    });
+  }
+
+  void _prev() {
+    setState(() {
+      _currentIndex = (_currentIndex - 1 + _demplots.length) % _demplots.length;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final demplot = _demplots[_currentIndex];
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -883,116 +908,209 @@ class _HeroTelemetryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // Header of Mock Card
+          // Header with Demplot Title, Prev/Next Arrows and Online Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
+              Expanded(
+                child: Row(
+                  children: <Widget>[
+                    Text(
+                      demplot['emoji'] as String,
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            demplot['name'] as String,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            demplot['commodity'] as String,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Arrows & Indicator
               Row(
-                children: <Widget>[
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: AppColors.optimalGreen,
-                      shape: BoxShape.circle,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 14),
+                    onPressed: _prev,
+                    tooltip: 'Demplot Sebelumnya',
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.backgroundLight,
+                      foregroundColor: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Demplot Sawi (Organik)',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_currentIndex + 1}/3',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryEmerald,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                    onPressed: _next,
+                    tooltip: 'Demplot Selanjutnya',
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.backgroundLight,
+                      foregroundColor: AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(20),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Desa Nyanglan, Klungkung • Data Terkini',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
                 ),
-                child: Text(
-                  'ONLINE',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryEmerald,
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.optimalGreen,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'ONLINE',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryEmerald,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Desa Nyanglan, Klungkung • Data Terkini',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+          const SizedBox(height: 18),
+
+          // Animated Switcher for Smooth Demplot Transition
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+            child: KeyedSubtree(
+              key: ValueKey<int>(_currentIndex),
+              child: Column(
+                children: [
+                  // 2x2 Telemetry Metric Widgets
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: _HeroMetricBox(
+                          icon: Icons.water_drop_outlined,
+                          iconColor: AppColors.secondary,
+                          label: 'Kelembaban Tanah',
+                          value: widget.isLoading ? '...' : '${widget.latestTelemetry?['soilMoisture'] ?? demplot['moisture']} %',
+                          status: 'Optimal',
+                          statusColor: AppColors.optimalGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _HeroMetricBox(
+                          icon: Icons.science_outlined,
+                          iconColor: AppColors.primaryEmerald,
+                          label: 'pH Tanah',
+                          value: widget.isLoading ? '...' : '${widget.latestTelemetry?['ph'] ?? demplot['ph']}',
+                          status: 'Netral',
+                          statusColor: AppColors.optimalGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: _HeroMetricBox(
+                          icon: Icons.thermostat_rounded,
+                          iconColor: Colors.deepOrange,
+                          label: 'Suhu Udara',
+                          value: widget.isLoading ? '...' : '${widget.latestTelemetry?['temperature'] ?? demplot['temp']} °C',
+                          status: 'Ideal',
+                          statusColor: AppColors.optimalGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _HeroMetricBox(
+                          icon: Icons.cloud_queue_rounded,
+                          iconColor: Colors.indigo,
+                          label: 'Kelembaban Udara',
+                          value: widget.isLoading ? '...' : '${widget.latestTelemetry?['humidity'] ?? demplot['humidity']} %',
+                          status: 'Optimal',
+                          statusColor: AppColors.optimalGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 20),
 
-          // 2x2 Telemetry Metric Widgets
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _HeroMetricBox(
-                  icon: Icons.water_drop_outlined,
-                  iconColor: AppColors.secondary,
-                  label: 'Kelembaban Tanah',
-                  value: isLoading ? '...' : '${latestTelemetry?['soilMoisture'] ?? 68.4} %',
-                  status: 'Optimal',
-                  statusColor: AppColors.optimalGreen,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _HeroMetricBox(
-                  icon: Icons.science_outlined,
-                  iconColor: AppColors.primaryEmerald,
-                  label: 'pH Tanah',
-                  value: isLoading ? '...' : '${latestTelemetry?['ph'] ?? 6.7}',
-                  status: 'Normal',
-                  statusColor: AppColors.optimalGreen,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _HeroMetricBox(
-                  icon: Icons.thermostat_rounded,
-                  iconColor: Colors.deepOrange,
-                  label: 'Suhu Lingkungan',
-                  value: isLoading ? '...' : '${latestTelemetry?['temperature'] ?? 23.8} °C',
-                  status: 'Sejuk',
-                  statusColor: AppColors.optimalGreen,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _HeroMetricBox(
-                  icon: Icons.cloud_queue_rounded,
-                  iconColor: Colors.indigo,
-                  label: 'Kelembaban Udara',
-                  value: isLoading ? '...' : '${latestTelemetry?['humidity'] ?? 78} %',
-                  status: 'Ideal',
-                  statusColor: AppColors.optimalGreen,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           const Divider(color: AppColors.borderLight),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // Pump Actuator Status
+          // Irrigation Automation Status
           Row(
             children: <Widget>[
               Container(
@@ -1004,7 +1122,7 @@ class _HeroTelemetryCard extends StatelessWidget {
                 child: const Icon(
                   Icons.power_settings_new_rounded,
                   color: AppColors.primaryEmerald,
-                  size: 18,
+                  size: 16,
                 ),
               ),
               const SizedBox(width: 10),
@@ -1013,7 +1131,7 @@ class _HeroTelemetryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Sistem Irigasi Cerdas',
+                      'Sistem Irigasi & Otomasi Presisi',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -1021,7 +1139,7 @@ class _HeroTelemetryCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Aktuator Otomatis Siap (Berdasarkan Ambang Batas)',
+                      'Aktuator Otomatis Terhubung',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: AppColors.textSecondary,
@@ -1033,9 +1151,33 @@ class _HeroTelemetryCard extends StatelessWidget {
               const Icon(
                 Icons.check_circle_rounded,
                 color: AppColors.optimalGreen,
-                size: 20,
+                size: 18,
               ),
             ],
+          ),
+
+          const SizedBox(height: 12),
+          // Dots Indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _demplots.length,
+              (index) => GestureDetector(
+                onTap: () => setState(() => _currentIndex = index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: _currentIndex == index ? 20 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: _currentIndex == index
+                        ? AppColors.primaryEmerald
+                        : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -2202,7 +2344,7 @@ class _OrgInfoCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Program Pendampingan Kelompok Ormawa',
+                    'Program Penguatan Kapasitas Ormawa',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -2245,7 +2387,7 @@ class _OrgInfoCard extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         Text(
-          'AgriMotion merupakan wujud dedikasi mahasiswa FMIPA Universitas Udayana dalam mentransformasi sektor pertanian tradisional menjadi sistem berbasis data presisi. Melalui instalasi modul IoT, pelatihan kader tani muda, dan sistem kendali aktuator otomatis, program ini bertujuan meningkatkan efisiensi penggunaan air dan pupuk serta meningkatkan ketahanan pangan masyarakat pedesaan.',
+          'AGRI-MOTION merupakan wujud dedikasi mahasiswa FMIPA Universitas Udayana dalam mentransformasi sektor pertanian tradisional menjadi sistem berbasis data presisi. Melalui instalasi modul IoT, pelatihan kader tani muda, dan sistem kendali aktuator otomatis, program ini bertujuan meningkatkan efisiensi penggunaan air dan pupuk serta meningkatkan ketahanan pangan masyarakat pedesaan.',
           style: GoogleFonts.inter(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -2582,34 +2724,13 @@ class _Footer extends StatelessWidget {
                   children: <Widget>[
                     // Col 1: Brand & Bio
                     Expanded(
-                      flex: 4,
+                      flex: 6,
                       child: _FooterBrandColumn(onHomeTap: onNavHome),
                     ),
-                    const SizedBox(width: 48),
-                    // Col 2: Quick Links
-                    Expanded(
-                      flex: 2,
-                      child: _FooterLinksColumn(
-                        title: 'Navigasi',
-                        links: [
-                          _FooterLinkItem(title: 'Beranda', onTap: onNavHome),
-                          _FooterLinkItem(title: 'Fitur Utama', onTap: onNavFeatures),
-                          _FooterLinkItem(title: 'Statistik & Data', onTap: onNavStats),
-                          _FooterLinkItem(title: 'Tim PPKO', onTap: onNavTeam),
-                          _FooterLinkItem(title: 'Dokumentasi', onTap: onNavAdmin),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    // Col 3: Demplot Binaan
-                    Expanded(
-                      flex: 3,
-                      child: _FooterDemplotListColumn(onStatsTap: onNavStats),
-                    ),
-                    const SizedBox(width: 24),
-                    // Col 4: Contact info
+                    const SizedBox(width: 64),
+                    // Col 2: Contact info
                     const Expanded(
-                      flex: 3,
+                      flex: 5,
                       child: _FooterContactColumn(),
                     ),
                   ],
@@ -2622,19 +2743,6 @@ class _Footer extends StatelessWidget {
                     const SizedBox(height: 32),
                     const Divider(color: Color(0xFF1E3A2B)),
                     const SizedBox(height: 24),
-                    _FooterLinksColumn(
-                      title: 'Navigasi',
-                      links: [
-                        _FooterLinkItem(title: 'Beranda', onTap: onNavHome),
-                        _FooterLinkItem(title: 'Fitur Utama', onTap: onNavFeatures),
-                        _FooterLinkItem(title: 'Statistik & Data', onTap: onNavStats),
-                        _FooterLinkItem(title: 'Tim PPKO', onTap: onNavTeam),
-                        _FooterLinkItem(title: 'Dokumentasi', onTap: onNavAdmin),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    _FooterDemplotListColumn(onStatsTap: onNavStats),
-                    const SizedBox(height: 32),
                     const _FooterContactColumn(),
                   ],
                 ),
@@ -2644,62 +2752,14 @@ class _Footer extends StatelessWidget {
               const SizedBox(height: 28),
 
               // Bottom Copyright Bar
-              isMobile
-                  ? Column(
-                      children: <Widget>[
-                        Text(
-                          '© 2026 AgriMotion - PPKO BEM FMIPA Universitas Udayana.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: const Color(0xFF94A3B8),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Seluruh Hak Cipta Dilindungi.',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        InkWell(
-                          onTap: onNavAdmin,
-                          child: Text(
-                            'Pelajari Selengkapnya →',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.leafGreen,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text(
-                          '© 2026 AgriMotion - PPKO BEM FMIPA Universitas Udayana. Seluruh Hak Cipta Dilindungi.',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: const Color(0xFF94A3B8),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: onNavAdmin,
-                          child: Text(
-                            'Pelajari Selengkapnya →',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.leafGreen,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              Text(
+                '© 2026 AGRI-MOTION - PPKO BEM FMIPA Universitas Udayana. Seluruh Hak Cipta Dilindungi.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: const Color(0xFF94A3B8),
+                ),
+              ),
             ],
           ),
         ),
@@ -2723,21 +2783,27 @@ class _FooterBrandColumn extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.eco_rounded,
-                  color: Colors.white,
-                  size: 20,
+              Image.asset(
+                'assets/logo.png',
+                width: 38,
+                height: 38,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.eco_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Text(
-                'AgriMotion',
+                'AGRI-MOTION',
                 style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -2759,177 +2825,22 @@ class _FooterBrandColumn extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: const Color(0xFF132A1F),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFF1E3A2B)),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Icon(
-                Icons.check_circle_outline_rounded,
-                color: AppColors.optimalGreen,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'PPKO BEM FMIPA UNUD 2026',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFE2E8F0),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FooterLinkItem {
-  final String title;
-  final VoidCallback onTap;
-
-  _FooterLinkItem({required this.title, required this.onTap});
-}
-
-class _FooterLinksColumn extends StatelessWidget {
-  final String title;
-  final List<_FooterLinkItem> links;
-
-  const _FooterLinksColumn({
-    required this.title,
-    required this.links,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ...links.map(
-          (link) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
-              onTap: link.onTap,
-              child: Text(
-                link.title,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: const Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+          child: Text(
+            'PPKO BEM FMIPA UNUD 2026',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFFE2E8F0),
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _FooterDemplotListColumn extends StatelessWidget {
-  final VoidCallback onStatsTap;
-
-  const _FooterDemplotListColumn({required this.onStatsTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          'Demplot Binaan',
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _DemplotFooterItem(
-          emoji: '🌸',
-          title: 'Demplot 1: Bunga Pacah',
-          node: 'Demplot Bunga Pacah',
-          onTap: onStatsTap,
-        ),
-        const SizedBox(height: 10),
-        _DemplotFooterItem(
-          emoji: '🥬',
-          title: 'Demplot 2: Sawi Hijau',
-          node: 'Demplot Sawi',
-          onTap: onStatsTap,
-        ),
-        const SizedBox(height: 10),
-        _DemplotFooterItem(
-          emoji: '🌶️',
-          title: 'Demplot 3: Cabai Rawit',
-          node: 'Demplot Cabai',
-          onTap: onStatsTap,
-        ),
-      ],
-    );
-  }
-}
-
-class _DemplotFooterItem extends StatelessWidget {
-  final String emoji;
-  final String title;
-  final String node;
-  final VoidCallback onTap;
-
-  const _DemplotFooterItem({
-    required this.emoji,
-    required this.title,
-    required this.node,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        children: <Widget>[
-          Text(emoji, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFE2E8F0),
-                  ),
-                ),
-                Text(
-                  node,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -2951,24 +2862,24 @@ class _FooterContactColumn extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _ContactRow(
+        const _ContactRow(
           icon: Icons.mail_outline_rounded,
-          text: 'agrimotion@bemfmipa.com',
+          text: 'ppkormawabemfmipaunud2026@gmail.com',
         ),
-        const SizedBox(height: 10),
-        _ContactRow(
+        const SizedBox(height: 12),
+        const _ContactRow(
           icon: Icons.phone_android_rounded,
-          text: '+62 812-3456-7890 (WhatsApp)',
+          text: '+62 851 5609 3412 (WhatsApp)',
         ),
-        const SizedBox(height: 10),
-        _ContactRow(
+        const SizedBox(height: 12),
+        const _ContactRow(
           icon: Icons.location_on_outlined,
           text: 'Desa Nyanglan, Kecamatan Banjarangkan, Kabupaten Klungkung',
         ),
-        const SizedBox(height: 10),
-        _ContactRow(
+        const SizedBox(height: 12),
+        const _ContactRow(
           icon: Icons.account_balance_outlined,
-          text: 'Sekretariat BEM FMIPA Universitas Udayana, Jimbaran',
+          text: 'Gedung FH Bawah Kampus FMIPA Bukit Jimbaran Unud, Bali',
         ),
       ],
     );
