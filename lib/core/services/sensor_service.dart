@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/sensor_data.dart';
@@ -69,13 +68,11 @@ class SensorService {
         'Koneksi ke server timeout (${ApiConfig.requestTimeout.inSeconds}s). '
         'Pastikan VPS backend aktif dan port ${Uri.parse(ApiConfig.baseUrl).port} terbuka.',
       );
-    } on SocketException catch (e) {
+    } on http.ClientException catch (e) {
       throw Exception(
         'Gagal terhubung ke server: ${e.message}. '
         'Pastikan perangkat terhubung ke internet dan VPS aktif.',
       );
-    } on http.ClientException catch (e) {
-      throw Exception('Kesalahan koneksi HTTP: ${e.message}');
     } on FormatException {
       throw Exception(
         'Respons dari server bukan JSON valid. Periksa backend logs.',
@@ -159,13 +156,11 @@ class SensorService {
         'Koneksi ke server timeout (${ApiConfig.requestTimeout.inSeconds}s). '
         'Pastikan VPS backend aktif dan port ${Uri.parse(ApiConfig.baseUrl).port} terbuka.',
       );
-    } on SocketException catch (e) {
+    } on http.ClientException catch (e) {
       throw Exception(
         'Gagal terhubung ke server: ${e.message}. '
         'Pastikan perangkat terhubung ke internet dan VPS aktif.',
       );
-    } on http.ClientException catch (e) {
-      throw Exception('Kesalahan koneksi HTTP: ${e.message}');
     } on FormatException {
       throw Exception(
         'Respons dari server bukan JSON valid. Periksa backend logs.',

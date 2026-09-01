@@ -114,7 +114,7 @@ class SensorData {
           json['phosphorus'] ?? json['npk_p'] ?? json['npkP']),
       npkK:
           _toDoubleNullable(json['potassium'] ?? json['npk_k'] ?? json['npkK']),
-      timestamp: _parseTimestamp(json['timestamp'] ?? json['createdAt']),
+      timestamp: _parseTimestamp(json['timestamp']),
     );
   }
 

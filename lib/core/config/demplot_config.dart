@@ -64,50 +64,44 @@ class DemplotConfig {
   DemplotConfig._(); // Prevent instantiation
 
   static const List<Demplot> demplots = [
-    // ── Demplot 1: Bunga Pacah (Node 1 / dulunya 1B) ────────────────────
+    // ── Demplot 1: Padi (Node 1A) ──────────────────────────────────────
     Demplot(
       farmId: '11111111-1111-1111-1111-111111111111',
       name: 'Demplot 1',
-      commodity: 'Bunga Pacah',
-      icon: '🌸',
-      devices: [
-        DeviceNode(
-          deviceId: '10000000-0000-0000-0000-000000000002',
-          deviceCode: 'node-1b',
-          label: 'Node 1',
-          isInstalled: true,
-        ),
-      ],
-    ),
-
-    // ── Demplot 2: Sawi (Node 2A / dulunya 1A & Node 2B belum terpasang)
-    Demplot(
-      farmId: '22222222-2222-2222-2222-222222222222',
-      name: 'Demplot 2',
-      commodity: 'Sawi',
-      icon: '🥬',
+      commodity: 'Padi',
+      icon: '🌾',
       devices: [
         DeviceNode(
           deviceId: '10000000-0000-0000-0000-000000000001',
           deviceCode: 'node-1a',
-          label: 'Node 2A',
+          label: 'Node 1A',
           isInstalled: true,
-        ),
-        DeviceNode(
-          deviceId: '20000000-0000-0000-0000-000000000002',
-          deviceCode: 'node-2b',
-          label: 'Node 2B',
-          isInstalled: false,
         ),
       ],
     ),
 
-    // ── Demplot 3: Cabai (Node 3A) ─────────────────────────────────────
+    // ── Demplot 2: Bunga Pacar Air / Bunga Pacah (Node 2A) ─────────────
+    Demplot(
+      farmId: '22222222-2222-2222-2222-222222222222',
+      name: 'Demplot 2',
+      commodity: 'Bunga Pacar Air',
+      icon: '🌸',
+      devices: [
+        DeviceNode(
+          deviceId: '20000000-0000-0000-0000-000000000001',
+          deviceCode: 'node-2a',
+          label: 'Node 2A',
+          isInstalled: true,
+        ),
+      ],
+    ),
+
+    // ── Demplot 3: Sayuran Hijau (Node 3A) ─────────────────────────────
     Demplot(
       farmId: '33333333-3333-3333-3333-333333333333',
       name: 'Demplot 3',
-      commodity: 'Cabai',
-      icon: '🌶️',
+      commodity: 'Sayuran Hijau',
+      icon: '🥬',
       devices: [
         DeviceNode(
           deviceId: '30000000-0000-0000-0000-000000000001',

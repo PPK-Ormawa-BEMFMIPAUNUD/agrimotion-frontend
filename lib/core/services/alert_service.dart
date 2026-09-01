@@ -46,12 +46,12 @@ class AlertService {
       if (diff.inHours >= 1) {
         alerts.add(AlertModel(
           id: 'offline_${data.timestamp.millisecondsSinceEpoch}',
-          title: 'Node Offline',
-          description:
+          deviceId: data.deviceId ?? data.deviceCode ?? 'unknown',
+          type: 'Node Offline',
+          message:
               'Node $nodeStr belum mengirim data selama lebih dari 1 jam. Terakhir aktif: ${data.timestamp.toLocal().toString().split('.')[0]}.',
-          timestamp: now,
-          severity: AlertSeverity.info,
-          deviceId: data.deviceId ?? data.deviceCode,
+          status: 'UNRESOLVED',
+          createdAt: now,
         ));
       }
 
@@ -61,22 +61,22 @@ class AlertService {
         if (moisture < 25.0) {
           alerts.add(AlertModel(
             id: 'crit_moisture_${data.timestamp.millisecondsSinceEpoch}',
-            title: 'Kelembaban Tanah Kritis',
-            description:
+            deviceId: data.deviceId ?? data.deviceCode ?? 'unknown',
+            type: 'Kelembaban Tanah Kritis',
+            message:
                 'Node $nodeStr mendeteksi kelembaban tanah sangat rendah ($moisture%). Segera aktifkan irigasi untuk mencegah kerusakan tanaman.',
-            timestamp: data.timestamp,
-            severity: AlertSeverity.critical,
-            deviceId: data.deviceId ?? data.deviceCode,
+            status: 'UNRESOLVED',
+            createdAt: data.timestamp,
           ));
         } else if (moisture >= 25.0 && moisture <= 30.0) {
           alerts.add(AlertModel(
             id: 'warn_moisture_${data.timestamp.millisecondsSinceEpoch}',
-            title: 'Kelembaban Tanah Berkurang',
-            description:
+            deviceId: data.deviceId ?? data.deviceCode ?? 'unknown',
+            type: 'Kelembaban Tanah Berkurang',
+            message:
                 'Node $nodeStr melaporkan kelembaban tanah turun ke angka $moisture%.',
-            timestamp: data.timestamp,
-            severity: AlertSeverity.warning,
-            deviceId: data.deviceId ?? data.deviceCode,
+            status: 'UNRESOLVED',
+            createdAt: data.timestamp,
           ));
         }
       }
@@ -87,21 +87,21 @@ class AlertService {
         if (temp > 35.0) {
           alerts.add(AlertModel(
             id: 'crit_temp_${data.timestamp.millisecondsSinceEpoch}',
-            title: 'Suhu Udara Ekstrem',
-            description:
+            deviceId: data.deviceId ?? data.deviceCode ?? 'unknown',
+            type: 'Suhu Udara Ekstrem',
+            message:
                 'Node $nodeStr mendeteksi suhu mencapai $temp°C. Suhu ini dapat membahayakan daun. Segera periksa ventilasi.',
-            timestamp: data.timestamp,
-            severity: AlertSeverity.critical,
-            deviceId: data.deviceId ?? data.deviceCode,
+            status: 'UNRESOLVED',
+            createdAt: data.timestamp,
           ));
         } else if (temp >= 32.0 && temp <= 35.0) {
           alerts.add(AlertModel(
             id: 'warn_temp_${data.timestamp.millisecondsSinceEpoch}',
-            title: 'Peningkatan Suhu',
-            description: 'Node $nodeStr melaporkan suhu meningkat ke $temp°C.',
-            timestamp: data.timestamp,
-            severity: AlertSeverity.warning,
-            deviceId: data.deviceId ?? data.deviceCode,
+            deviceId: data.deviceId ?? data.deviceCode ?? 'unknown',
+            type: 'Peningkatan Suhu',
+            message: 'Node $nodeStr melaporkan suhu meningkat ke $temp°C.',
+            status: 'UNRESOLVED',
+            createdAt: data.timestamp,
           ));
         }
       }
