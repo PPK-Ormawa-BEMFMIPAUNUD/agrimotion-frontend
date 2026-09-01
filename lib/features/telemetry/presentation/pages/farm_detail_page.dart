@@ -675,18 +675,18 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
     _activeData!.chartPoints24h.addAll(map);
   }
 
-  List<_ChartPoint> _buildChartPoints24h(List<_TelemetryRecord> records) {
+    List<_ChartPoint> _buildChartPoints24h(List<_TelemetryRecord> records) {
     if (records.isEmpty) return [];
+    
+    // Strictly filter points from last 24 hours relative to current real time
     final now = DateTime.now();
     final cutoff = now.subtract(const Duration(hours: 24));
-    List<_TelemetryRecord> filtered = records.where((r) => r.timestamp.isAfter(cutoff)).toList();
     
-    // Fallback: If no records within last 24h (device offline), take the most recent 30-50 historical records
-    if (filtered.isEmpty) {
-      filtered = records.take(50).toList();
-    }
+    final filtered = records.where((r) => r.timestamp.isAfter(cutoff)).toList();
+    
+    // Sort chronological ascending
+    final chronological = filtered..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    final chronological = filtered.reversed.toList();
     return chronological.asMap().entries.map((entry) {
       final i = entry.key;
       final r = entry.value;
@@ -708,6 +708,7 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
     final int daysCount = range == TimeRange.week7d ? 7 : 30;
     final now = DateTime.now();
 
+    // Strictly check each calendar day in the last 7 or 30 days from now
     final List<_DailyAverage> existingAverages = [];
     for (int i = daysCount - 1; i >= 0; i--) {
       final d = now.subtract(Duration(days: i));
@@ -716,11 +717,6 @@ class _FarmDetailPageState extends ConsumerState<FarmDetailPage> {
       if (avg != null) {
         existingAverages.add(avg);
       }
-    }
-
-    // If no recent averages in the current calendar days, fallback to available historical averages
-    if (existingAverages.isEmpty && _dailyAveragesMap.isNotEmpty) {
-      existingAverages.addAll(_dailyAveragesMap.values.take(daysCount));
     }
 
     if (existingAverages.isEmpty) return [];

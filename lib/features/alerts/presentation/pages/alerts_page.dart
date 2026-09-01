@@ -263,11 +263,24 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
         debugPrint('Failed to fetch /telemetry/latest: $e');
       }
 
-      // Sort alerts by timestamp descending
-      fetchedAlerts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      // Deduplicate alerts: keep only the single most recent alert per unique (deviceId + title + severity)
+      final Map<String, AlertItemData> dedupedMap = {};
+      for (final alert in fetchedAlerts) {
+        final key = '${alert.deviceId}_${alert.title}_${alert.severity.name}';
+        if (!dedupedMap.containsKey(key)) {
+          dedupedMap[key] = alert;
+        } else {
+          if (alert.timestamp.isAfter(dedupedMap[key]!.timestamp)) {
+            dedupedMap[key] = alert;
+          }
+        }
+      }
+
+      final List<AlertItemData> finalAlerts = dedupedMap.values.toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       // Cache the fetched alerts
-      final cacheJson = fetchedAlerts.map((a) => {
+      final cacheJson = finalAlerts.map((a) => {
         'id': a.id,
         'title': a.title,
         'description': a.description,
@@ -283,7 +296,7 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
 
       if (mounted) {
         setState(() {
-          _alerts = fetchedAlerts;
+          _alerts = finalAlerts;
           _isLoading = false;
         });
       }
