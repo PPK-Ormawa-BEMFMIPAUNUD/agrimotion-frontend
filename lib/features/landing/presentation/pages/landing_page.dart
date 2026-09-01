@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
 import 'package:agrimotion/core/theme/colors.dart';
-import 'package:agrimotion/core/router/app_router.dart';
 import 'package:agrimotion/core/network/api_client.dart';
 import 'package:agrimotion/core/constants/api_constants.dart';
 import 'package:agrimotion/core/services/cache_service.dart';
@@ -142,9 +140,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     }
   }
 
-  void _navigateToAdminLogin() {
-    context.go(AppRoutes.login);
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +165,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                   key: _berandaKey,
                   child: _HeroSection(
                     onExplorePressed: () => _scrollToSection(_statistikKey),
-                    onLoginPressed: _navigateToAdminLogin,
+                    onLoginPressed: () => _scrollToSection(_fiturKey),
                     latestTelemetry: _latestTelemetry,
                     isLoading: _isLoadingData,
                   ),
@@ -199,7 +195,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
 
                 // 5. Call To Action Banner
                 _CallToActionBanner(
-                  onAdminLoginPressed: _navigateToAdminLogin,
+                  onAdminLoginPressed: () => _scrollToSection(_fiturKey),
                   onContactPressed: () => _scrollToSection(_kontakKey),
                 ),
 
@@ -211,7 +207,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                     onNavFeatures: () => _scrollToSection(_fiturKey),
                     onNavStats: () => _scrollToSection(_statistikKey),
                     onNavTeam: () => _scrollToSection(_timKey),
-                    onNavAdmin: _navigateToAdminLogin,
+                    onNavAdmin: () => _scrollToSection(_fiturKey),
                   ),
                 ),
               ],
@@ -237,7 +233,6 @@ class _LandingPageState extends ConsumerState<LandingPage> {
               onNavStatistik: () => _scrollToSection(_statistikKey),
               onNavTim: () => _scrollToSection(_timKey),
               onNavKontak: () => _scrollToSection(_kontakKey),
-              onNavPortalAdmin: _navigateToAdminLogin,
             ),
           ),
 
@@ -253,7 +248,6 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                 onNavStatistik: () => _scrollToSection(_statistikKey),
                 onNavTim: () => _scrollToSection(_timKey),
                 onNavKontak: () => _scrollToSection(_kontakKey),
-                onNavPortalAdmin: _navigateToAdminLogin,
               ),
             ),
         ],
@@ -276,7 +270,6 @@ class _StickyNavbar extends StatelessWidget {
   final VoidCallback onNavStatistik;
   final VoidCallback onNavTim;
   final VoidCallback onNavKontak;
-  final VoidCallback onNavPortalAdmin;
 
   const _StickyNavbar({
     required this.isScrolled,
@@ -288,7 +281,6 @@ class _StickyNavbar extends StatelessWidget {
     required this.onNavStatistik,
     required this.onNavTim,
     required this.onNavKontak,
-    required this.onNavPortalAdmin,
   });
 
   @override
@@ -342,30 +334,7 @@ class _StickyNavbar extends StatelessWidget {
                   ],
                 ),
 
-                // Portal Admin CTA Button
-                ElevatedButton.icon(
-                  onPressed: onNavPortalAdmin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryEmerald,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.dashboard_outlined, size: 18),
-                  label: Text(
-                    'Portal Admin',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
+                const SizedBox.shrink(),
               ] else ...[
                 // Mobile Hamburger Toggle
                 IconButton(
@@ -497,7 +466,6 @@ class _MobileNavDropdown extends StatelessWidget {
   final VoidCallback onNavStatistik;
   final VoidCallback onNavTim;
   final VoidCallback onNavKontak;
-  final VoidCallback onNavPortalAdmin;
 
   const _MobileNavDropdown({
     required this.onNavBeranda,
@@ -505,7 +473,6 @@ class _MobileNavDropdown extends StatelessWidget {
     required this.onNavStatistik,
     required this.onNavTim,
     required this.onNavKontak,
-    required this.onNavPortalAdmin,
   });
 
   @override
@@ -557,25 +524,7 @@ class _MobileNavDropdown extends StatelessWidget {
           const SizedBox(height: 12),
           const Divider(color: AppColors.borderLight),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: onNavPortalAdmin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryEmerald,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: const Icon(Icons.dashboard_outlined, size: 18),
-            label: Text(
-              'Masuk Portal Admin',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ),
+          const SizedBox.shrink(),
         ],
       ),
     );
@@ -764,7 +713,7 @@ class _HeroTextContent extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  'PPKO BEM FMIPA UNUD 2026 • Desa Pengotan, Bangli',
+                  'PPKO BEM FMIPA UNUD 2026 • Desa Nyanglan, Klungkung',
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 12,
@@ -794,7 +743,7 @@ class _HeroTextContent extends StatelessWidget {
 
         // Subheadline
         Text(
-          'Platform monitoring tanah, iklim mikro, dan irigasi otomatis berbasis Internet of Things untuk demplot binaan di Desa Pengotan, Bangli.',
+          'Platform monitoring tanah, iklim mikro, dan irigasi otomatis berbasis Internet of Things untuk demplot binaan di Desa Nyanglan, Klungkung.',
           style: GoogleFonts.inter(
             color: Colors.white.withValues(alpha: 0.9),
             fontSize: isMobile ? 15 : 17,
@@ -849,7 +798,7 @@ class _HeroTextContent extends StatelessWidget {
               ),
               icon: const Icon(Icons.lock_open_rounded, size: 18),
               label: Text(
-                'Masuk Portal',
+                'Pelajari Program',
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -950,7 +899,7 @@ class _HeroTelemetryCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Node 1A • Demplot Sawi',
+                    'Demplot Sawi (Organik)',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -978,7 +927,7 @@ class _HeroTelemetryCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Desa Pengotan, Bangli • Data Terkini',
+            'Desa Nyanglan, Klungkung • Data Terkini',
             style: GoogleFonts.inter(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -1584,7 +1533,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 680),
                 child: Text(
-                  'Data implementasi perangkat sensor dan kaderisasi petani muda dalam program pendampingan di Desa Pengotan, Bangli.',
+                  'Data implementasi perangkat sensor dan kaderisasi petani muda dalam program pendampingan di Desa Nyanglan, Klungkung.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 16,
@@ -1624,7 +1573,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                     Expanded(
                       child: _StatCard(
                         value: activeSensorNodes > 0 ? activeSensorNodes.toString() : '...',
-                        label: 'Node Sensor Aktif',
+                        label: 'Sensor IoT Aktif',
                         description:
                             'Perangkat IoT mendeteksi kondisi demplot 24/7.',
                         icon: Icons.sensors_rounded,
@@ -1656,7 +1605,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                     const SizedBox(height: 16),
                     _StatCard(
                       value: activeSensorNodes > 0 ? activeSensorNodes.toString() : '...',
-                      label: 'Node Sensor Aktif',
+                      label: 'Sensor IoT Aktif',
                       description:
                           'Perangkat IoT mendeteksi kondisi demplot 24/7.',
                       icon: Icons.sensors_rounded,
@@ -1684,7 +1633,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Setiap demplot dilengkapi node sensor IoT presisi yang memantau kondisi tanah secara mandiri.',
+                  'Setiap demplot dilengkapi sensor IoT presisi yang memantau kondisi tanah secara mandiri.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -1702,7 +1651,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                         demplotNumber: 'Demplot 1',
                         commodity: 'Bunga Pacah',
                         emoji: '🌸',
-                        nodeCode: 'Node 1 (node-1b)',
+                        nodeCode: 'Demplot Bunga Pacah',
                         targetMoisture: '65% - 80%',
                         targetPh: '6.0 - 7.0',
                         focusDesc:
@@ -1716,7 +1665,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                         demplotNumber: 'Demplot 2',
                         commodity: 'Sawi Hijau',
                         emoji: '🥬',
-                        nodeCode: 'Node 2A & 2B',
+                        nodeCode: 'Demplot Sawi',
                         targetMoisture: '70% - 85%',
                         targetPh: '6.2 - 6.8',
                         focusDesc:
@@ -1730,7 +1679,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                         demplotNumber: 'Demplot 3',
                         commodity: 'Cabai Rawit',
                         emoji: '🌶️',
-                        nodeCode: 'Node 3A (node-3a)',
+                        nodeCode: 'Demplot Cabai',
                         targetMoisture: '60% - 75%',
                         targetPh: '6.0 - 6.5',
                         focusDesc:
@@ -1747,7 +1696,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                       demplotNumber: 'Demplot 1',
                       commodity: 'Bunga Pacah',
                       emoji: '🌸',
-                      nodeCode: 'Node 1 (node-1b)',
+                      nodeCode: 'Demplot Bunga Pacah',
                       targetMoisture: '65% - 80%',
                       targetPh: '6.0 - 7.0',
                       focusDesc:
@@ -1759,7 +1708,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                       demplotNumber: 'Demplot 2',
                       commodity: 'Sawi Hijau',
                       emoji: '🥬',
-                      nodeCode: 'Node 2A & 2B',
+                      nodeCode: 'Demplot Sawi',
                       targetMoisture: '70% - 85%',
                       targetPh: '6.2 - 6.8',
                       focusDesc:
@@ -1771,7 +1720,7 @@ class _StatsAndDemplotSection extends StatelessWidget {
                       demplotNumber: 'Demplot 3',
                       commodity: 'Cabai Rawit',
                       emoji: '🌶️',
-                      nodeCode: 'Node 3A (node-3a)',
+                      nodeCode: 'Demplot Cabai',
                       targetMoisture: '60% - 75%',
                       targetPh: '6.0 - 6.5',
                       focusDesc:
@@ -1979,7 +1928,7 @@ class _DemplotCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Perangkat: $nodeCode',
+                'Status: Aktif Real-Time',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -2128,7 +2077,7 @@ class _TeamSection extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 700),
                 child: Text(
-                  'Program Penguatan Kapasitas Organisasi Kemahasiswaan (PPKO) BEM FMIPA Universitas Udayana di Desa Dampingan Pengotan, Bangli.',
+                  'Program Penguatan Kapasitas Organisasi Kemahasiswaan (PPKO) BEM FMIPA Universitas Udayana di Desa Dampingan Nyanglan, Klungkung.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 16,
@@ -2205,7 +2154,7 @@ class _TeamSection extends StatelessWidget {
                   ),
                   _AffiliationBadge(
                     icon: Icons.location_on_rounded,
-                    label: 'Desa Pengotan, Bangli',
+                    label: 'Desa Nyanglan, Klungkung',
                   ),
                 ],
               ),
@@ -2283,7 +2232,7 @@ class _OrgInfoCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Desa Dampingan: Desa Pengotan, Kabupaten Bangli, Bali',
+                  'Desa Dampingan: Desa Nyanglan, Kecamatan Banjarangkan, Kabupaten Klungkung',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -2329,7 +2278,7 @@ class _ProgramPillarsCard extends StatelessWidget {
           number: '01',
           title: 'Digitalisasi Lahan Pertanian',
           subtitle:
-              'Instalasi perangkat node sensor tanah dan transmisi nirkabel real-time.',
+              'Instalasi perangkat sensor tanah dan transmisi nirkabel real-time.',
         ),
         const SizedBox(height: 12),
         const _PillarItem(
@@ -2547,7 +2496,7 @@ class _CallToActionBanner extends StatelessWidget {
                             ),
                             icon: const Icon(Icons.login_rounded, size: 18),
                             label: Text(
-                              'Masuk ke Portal Admin',
+                              'Pelajari Inovasi',
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
@@ -2647,7 +2596,7 @@ class _Footer extends StatelessWidget {
                           _FooterLinkItem(title: 'Fitur Utama', onTap: onNavFeatures),
                           _FooterLinkItem(title: 'Statistik & Data', onTap: onNavStats),
                           _FooterLinkItem(title: 'Tim PPKO', onTap: onNavTeam),
-                          _FooterLinkItem(title: 'Portal Pengelola', onTap: onNavAdmin),
+                          _FooterLinkItem(title: 'Dokumentasi', onTap: onNavAdmin),
                         ],
                       ),
                     ),
@@ -2680,7 +2629,7 @@ class _Footer extends StatelessWidget {
                         _FooterLinkItem(title: 'Fitur Utama', onTap: onNavFeatures),
                         _FooterLinkItem(title: 'Statistik & Data', onTap: onNavStats),
                         _FooterLinkItem(title: 'Tim PPKO', onTap: onNavTeam),
-                        _FooterLinkItem(title: 'Portal Pengelola', onTap: onNavAdmin),
+                        _FooterLinkItem(title: 'Dokumentasi', onTap: onNavAdmin),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -2718,7 +2667,7 @@ class _Footer extends StatelessWidget {
                         InkWell(
                           onTap: onNavAdmin,
                           child: Text(
-                            'Akses Portal Pengelola →',
+                            'Pelajari Selengkapnya →',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -2741,7 +2690,7 @@ class _Footer extends StatelessWidget {
                         InkWell(
                           onTap: onNavAdmin,
                           child: Text(
-                            'Akses Portal Pengelola →',
+                            'Pelajari Selengkapnya →',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -2914,21 +2863,21 @@ class _FooterDemplotListColumn extends StatelessWidget {
         _DemplotFooterItem(
           emoji: '🌸',
           title: 'Demplot 1: Bunga Pacah',
-          node: 'Node 1 (node-1b)',
+          node: 'Demplot Bunga Pacah',
           onTap: onStatsTap,
         ),
         const SizedBox(height: 10),
         _DemplotFooterItem(
           emoji: '🥬',
           title: 'Demplot 2: Sawi Hijau',
-          node: 'Node 2A & 2B',
+          node: 'Demplot Sawi',
           onTap: onStatsTap,
         ),
         const SizedBox(height: 10),
         _DemplotFooterItem(
           emoji: '🌶️',
           title: 'Demplot 3: Cabai Rawit',
-          node: 'Node 3A (node-3a)',
+          node: 'Demplot Cabai',
           onTap: onStatsTap,
         ),
       ],
@@ -3014,7 +2963,7 @@ class _FooterContactColumn extends StatelessWidget {
         const SizedBox(height: 10),
         _ContactRow(
           icon: Icons.location_on_outlined,
-          text: 'Desa Pengotan, Kabupaten Bangli, Bali',
+          text: 'Desa Nyanglan, Kecamatan Banjarangkan, Kabupaten Klungkung',
         ),
         const SizedBox(height: 10),
         _ContactRow(

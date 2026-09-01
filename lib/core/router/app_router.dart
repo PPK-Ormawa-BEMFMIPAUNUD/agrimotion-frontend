@@ -88,10 +88,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (BuildContext context, GoRouterState state) {
       final AuthState authState = ref.read(authProvider);
       final bool isLoggedIn = authState.isAuthenticated;
-      final String location = state.matchedLocation;
+      final String rawLocation = state.matchedLocation.isNotEmpty
+          ? state.matchedLocation
+          : state.uri.path;
+      final String location = (rawLocation.length > 1 && rawLocation.endsWith('/'))
+          ? rawLocation.substring(0, rawLocation.length - 1)
+          : rawLocation;
 
       // 1. Rute Publik (Landing Page) -> Jangan pernah cegat/redirect
-      if (location == '/') return null;
+      if (location == '/' || location.isEmpty) return null;
 
       // 2. Jika user mencoba akses area /admin
       final bool isAccessingAdmin = location.startsWith('/admin');
