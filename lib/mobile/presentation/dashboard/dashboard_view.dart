@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:universal_html/html.dart' as html;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/config/demplot_config.dart';
@@ -7,7 +9,8 @@ import '../../../core/models/sensor_data.dart';
 import '../../../core/services/sensor_service.dart';
 import '../../../core/services/mqtt_service.dart';
 import '../../../core/utils/pump_command.dart';
-
+import '../../../core/utils/actuation_calculator.dart';
+import 'widgets/dss_actuation_dialog.dart';
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
 
@@ -55,6 +58,10 @@ class _DashboardViewState extends State<DashboardView>
   /// Subscription to ESP32 MQTT status messages.
   StreamSubscription<String>? _mqttStatusSubscription;
 
+  // Web Unload Fail-Safe Subscriptions
+  StreamSubscription? _beforeUnloadSub;
+  StreamSubscription? _unloadSub;
+
   // ---------------------------------------------------------------------------
   // Lifecycle — AppLifecycleState Observer
   // ---------------------------------------------------------------------------
@@ -80,6 +87,31 @@ class _DashboardViewState extends State<DashboardView>
     _fetchAllTelemetry();
     _startPollingTimer();
     _listenMqttStatus();
+    
+    if (kIsWeb) {
+      _setupWebBeforeUnloadListener();
+    }
+  }
+
+  void _setupWebBeforeUnloadListener() {
+    try {
+      _beforeUnloadSub = html.window.onBeforeUnload.listen((html.Event e) {
+        if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
+          MqttService.instance.publishCommand(PumpCommand.emergencyOff);
+          if (e is html.BeforeUnloadEvent) {
+            e.returnValue = 'Aktuasi pompa sedang berlangsung. Yakin ingin meninggalkan halaman?';
+          }
+        }
+      });
+
+      _unloadSub = html.window.onUnload.listen((_) {
+        if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
+          MqttService.instance.publishCommand(PumpCommand.emergencyOff);
+        }
+      });
+    } catch (e) {
+      debugPrint('[WebFailSafe] Error registering beforeunload: $e');
+    }
   }
 
   @override
@@ -87,6 +119,8 @@ class _DashboardViewState extends State<DashboardView>
     WidgetsBinding.instance.removeObserver(this);
     _pollingTimer?.cancel();
     _mqttStatusSubscription?.cancel();
+    _beforeUnloadSub?.cancel();
+    _unloadSub?.cancel();
     _sensorService.dispose();
     super.dispose();
   }
@@ -246,9 +280,6 @@ class _DashboardViewState extends State<DashboardView>
   bool _isSprayingFertilizer = false;
   bool _isSprayingPesticide = false;
   bool _isSprayingWater = false;
-  int _fertilizerDuration = 10; // default in seconds
-  int _pesticideDuration = 10; // default in seconds
-  int _waterDuration = 10; // default in seconds
   int _sprayRemainingSeconds = 0;
   Timer? _sprayCountdownTimer;
   String? _activeSprayingType;
@@ -257,20 +288,20 @@ class _DashboardViewState extends State<DashboardView>
     {
       "type": "Pupuk Cair",
       "demplot": "Demplot 1 (Bunga Pacah)",
-      "duration": "10s",
+      "duration": "20.0g - 162s",
       "time": "Tadi pagi 08:30",
       "status": "Selesai"
     },
     {
       "type": "Pestisida",
       "demplot": "Demplot 2 (Sawi)",
-      "duration": "5s",
+      "duration": "1.0mL - 27s",
       "time": "Kemarin 16:45",
       "status": "Selesai"
     }
   ];
 
-  void _startSpraying({required String type, required int durationSeconds}) {
+  void _startSpraying({required String type, required int durationSeconds, required String doseLabel}) {
     if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -351,9 +382,7 @@ class _DashboardViewState extends State<DashboardView>
           _sprayLogs.insert(0, {
             "type": type,
             "demplot": '${_currentDemplot.name} (${_currentDemplot.commodity})',
-            "duration": type == 'Siram Air'
-                ? '${durationSeconds ~/ 60}m'
-                : '${durationSeconds}s',
+            "duration": doseLabel,
             "time": "Baru saja",
             "status": "Selesai"
           });
@@ -1910,61 +1939,33 @@ class _DashboardViewState extends State<DashboardView>
               final isWide = constraints.maxWidth > 550;
 
               final fertilizerCard = _sprayCard(
+                type: ActuationType.fertilizer,
                 title: 'Semprot Pupuk Cair',
                 subtitle: 'Nutrisi organik untuk kesuburan tanah & tanaman',
                 icon: Icons.eco_rounded,
                 accentColor: const Color(0xFF0F7646),
-                gradient: AppTheme.primaryGradient,
-                selectedDuration: _fertilizerDuration,
-                onDurationChanged: (val) =>
-                    setState(() => _fertilizerDuration = val),
                 isThisSpraying: _isSprayingFertilizer,
-                onAction: () => _confirmAndSpray(
-                  type: 'Pupuk Cair',
-                  durationSeconds: _fertilizerDuration,
-                ),
+                onAction: () => _openDssDialog(ActuationType.fertilizer),
               );
 
               final pesticideCard = _sprayCard(
+                type: ActuationType.pesticide,
                 title: 'Semprot Pestisida',
                 subtitle: 'Proteksi tanaman dari hama & jamur',
                 icon: Icons.shield_outlined,
                 accentColor: const Color(0xFFD97706),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                selectedDuration: _pesticideDuration,
-                onDurationChanged: (val) =>
-                    setState(() => _pesticideDuration = val),
                 isThisSpraying: _isSprayingPesticide,
-                onAction: () => _confirmAndSpray(
-                  type: 'Pestisida',
-                  durationSeconds: _pesticideDuration,
-                ),
+                onAction: () => _openDssDialog(ActuationType.pesticide),
               );
 
               final waterCard = _sprayCard(
+                type: ActuationType.water,
                 title: 'Siram Air Saja',
                 subtitle: 'Penyiraman air bersih tanpa campuran',
                 icon: Icons.water_drop,
                 accentColor: const Color(0xFF0284C7),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                durationOptions: const [5, 10, 15],
-                durationUnit: 'm',
-                selectedDuration: _waterDuration,
-                onDurationChanged: (val) =>
-                    setState(() => _waterDuration = val),
                 isThisSpraying: _isSprayingWater,
-                onAction: () => _confirmAndSpray(
-                  type: 'Siram Air',
-                  durationSeconds: _waterDuration * 60,
-                ),
+                onAction: () => _openDssDialog(ActuationType.water),
               );
 
               if (isWide) {
@@ -2075,22 +2076,21 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _sprayCard({
+    required ActuationType type,
     required String title,
     required String subtitle,
     required IconData icon,
     required Color accentColor,
-    required LinearGradient gradient,
-    required int selectedDuration,
-    required Function(int) onDurationChanged,
     required bool isThisSpraying,
     required VoidCallback onAction,
-    List<int> durationOptions = const [5, 10, 15],
-    String durationUnit = 's',
   }) {
+    final bool isAnySpraying = _isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater;
+    final bool isDisabled = isAnySpraying && !isThisSpraying;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: isDisabled ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
@@ -2102,10 +2102,10 @@ class _DashboardViewState extends State<DashboardView>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
+                  color: isDisabled ? const Color(0xFFE2E8F0) : accentColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 20, color: accentColor),
+                child: Icon(icon, size: 20, color: isDisabled ? const Color(0xFF94A3B8) : accentColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -2114,17 +2114,17 @@ class _DashboardViewState extends State<DashboardView>
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: isDisabled ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
                       ),
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF64748B),
+                        color: isDisabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -2134,78 +2134,33 @@ class _DashboardViewState extends State<DashboardView>
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const Text(
-                'Durasi:',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF475569),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Wrap(
-                spacing: 6,
-                children: durationOptions.map((val) {
-                  final isSelected = selectedDuration == val;
-                  return GestureDetector(
-                    onTap: () => onDurationChanged(val),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: isSelected ? accentColor : Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isSelected
-                              ? accentColor
-                              : const Color(0xFFCBD5E1),
-                        ),
-                      ),
-                      child: Text(
-                        '$val$durationUnit',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected
-                              ? Colors.white
-                              : const Color(0xFF475569),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             height: 38,
             child: ElevatedButton.icon(
-              onPressed: isThisSpraying ? _stopSpraying : onAction,
+              onPressed: isDisabled ? null : (isThisSpraying ? _stopSpraying : onAction),
               icon: Icon(
                 isThisSpraying
                     ? Icons.stop_circle_outlined
                     : Icons.play_arrow_rounded,
                 size: 18,
-                color: Colors.white,
+                color: isDisabled ? const Color(0xFF94A3B8) : Colors.white,
               ),
               label: Text(
                 isThisSpraying
                     ? 'Hentikan ($_sprayRemainingSeconds s)'
-                    : 'Mulai $title',
-                style: const TextStyle(
-                  color: Colors.white,
+                    : 'Atur & $title',
+                style: TextStyle(
+                  color: isDisabled ? const Color(0xFF94A3B8) : Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 12.5,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isThisSpraying ? Colors.red.shade700 : accentColor,
+                backgroundColor: isDisabled 
+                    ? const Color(0xFFE2E8F0) 
+                    : (isThisSpraying ? Colors.red.shade700 : accentColor),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -2218,120 +2173,40 @@ class _DashboardViewState extends State<DashboardView>
     );
   }
 
-  void _confirmAndSpray({
-    required String type,
-    required int durationSeconds,
-  }) {
-    // Determine icon and color based on type
-    final IconData typeIcon;
-    final Color typeColor;
-    if (type == 'Pupuk Cair') {
-      typeIcon = Icons.eco;
-      typeColor = AppTheme.primaryColor;
-    } else if (type == 'Siram Air') {
-      typeIcon = Icons.water_drop;
-      typeColor = const Color(0xFF0284C7);
-    } else {
-      typeIcon = Icons.shield;
-      typeColor = const Color(0xFFD97706);
+  void _openDssDialog(ActuationType type) {
+    if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Penyemprotan lain sedang aktif! Harap tunggu.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
-
-    final String actionLabel =
-        type == 'Siram Air' ? 'penyiraman air bersih' : 'penyemprotan $type';
-
-    final String durationLabel =
-        type == 'Siram Air' ? 'Durasi Siram' : 'Durasi Semprot';
-
-    final String buttonLabel =
-        type == 'Siram Air' ? 'Mulai Siram' : 'Mulai Semprot';
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(typeIcon, color: typeColor),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text('Konfirmasi $type',
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Anda akan mengaktifkan aktuator $actionLabel dengan parameter:',
-              style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                children: [
-                  _confirmRow('Target Demplot',
-                      '${_currentDemplot.name} (${_currentDemplot.commodity})'),
-                  const SizedBox(height: 6),
-                  _confirmRow('Node Aktif', _currentDevice.label),
-                  const SizedBox(height: 6),
-                  _confirmRow(
-                    durationLabel,
-                    type == 'Siram Air'
-                        ? '${durationSeconds ~/ 60} Menit'
-                        : '$durationSeconds Detik',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child:
-                const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _startSpraying(type: type, durationSeconds: durationSeconds);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: typeColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(buttonLabel),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (ctx) => DssActuationDialog(
+        demplot: _currentDemplot,
+        device: _currentDevice,
+        sensorData: _currentSensorData,
+        type: type,
+        onConfirm: (physicalValue) {
+          final durationSeconds = ActuationCalculator.calculateDurationSeconds(
+              _selectedDemplotIndex, type, physicalValue);
+          final doseLabel = '$physicalValue${type.shortUnit} - ${durationSeconds}s';
+          
+          _startSpraying(
+            type: type.label,
+            durationSeconds: durationSeconds,
+            doseLabel: doseLabel,
+          );
+        },
       ),
     );
   }
 
-  Widget _confirmRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A))),
-      ],
-    );
-  }
 
   // ============================================================================
   // BOTTOM AREA — Charts & Device Info
