@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/sensor_data.dart';
+import '../models/ews_status_model.dart';
+import 'ews_service.dart';
 
 /// Service responsible for fetching sensor telemetry data
 /// from the NestJS production API at the VPS.
@@ -14,8 +16,16 @@ import '../models/sensor_data.dart';
 /// 4. Multi-device support: fetch all telemetry or filter by deviceId UUID / farmId.
 class SensorService {
   final http.Client _client;
+  final EwsService _ewsService;
 
-  SensorService({http.Client? client}) : _client = client ?? http.Client();
+  SensorService({http.Client? client}) 
+      : _client = client ?? http.Client(),
+        _ewsService = EwsService(client: client ?? http.Client());
+
+  /// Fetches EWS status for a specific demplot via [EwsService].
+  Future<EwsStatusModel> fetchEwsStatus(int demplotId) async {
+    return await _ewsService.fetchEwsStatus(demplotId);
+  }
 
   /// Standard HTTP request headers to completely bypass client and proxy caching.
   /// Uses headers rather than URL query parameters to avoid NestJS DTO ValidationPipe 400 errors.

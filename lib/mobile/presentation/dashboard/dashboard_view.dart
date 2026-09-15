@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/config/demplot_config.dart';
 import '../../../core/models/sensor_data.dart';
+import '../../../core/models/ews_status_model.dart';
 import '../../../core/services/sensor_service.dart';
 import '../../../core/services/mqtt_service.dart';
 import '../../../core/utils/pump_command.dart';
@@ -57,6 +58,10 @@ class _DashboardViewState extends State<DashboardView>
 
   /// Subscription to ESP32 MQTT status messages.
   StreamSubscription<String>? _mqttStatusSubscription;
+
+  /// Map of demplotIndex -> EwsStatusModel
+  final Map<int, EwsStatusModel> _ewsStatusMap = {};
+  bool _isLoadingEws = false;
 
   // Web Unload Fail-Safe Subscriptions
   StreamSubscription? _beforeUnloadSub;
@@ -186,10 +191,31 @@ class _DashboardViewState extends State<DashboardView>
   /// - Consecutive failure counter for exponential backoff
   /// - Staleness detection (server 200 but data timestamp too old)
   /// - Automatic backoff-to-normal recovery on first success
+  Future<void> _fetchEwsForCurrentDemplot() async {
+    setState(() => _isLoadingEws = true);
+    final demplotId = _selectedDemplotIndex;
+    try {
+      final ewsStatus = await _sensorService.fetchEwsStatus(demplotId);
+      if (mounted) {
+        setState(() {
+          _ewsStatusMap[demplotId] = ewsStatus;
+          _isLoadingEws = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingEws = false;
+        });
+      }
+    }
+  }
+
   Future<void> _fetchAllTelemetry() async {
     // Prevent overlapping requests (slow network + timer fire)
     if (_isFetching) return;
     _isFetching = true;
+    _fetchEwsForCurrentDemplot(); // Refresh EWS data concurrently
 
     try {
       final allData = await _sensorService.fetchAllLatestTelemetry();
@@ -545,6 +571,8 @@ class _DashboardViewState extends State<DashboardView>
             _buildDemplotSelector(),
             const SizedBox(height: 16),
             _buildSystemStatus(),
+            const SizedBox(height: 16),
+            _buildEwsCard(),
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
               _buildErrorBanner(),
@@ -605,6 +633,7 @@ class _DashboardViewState extends State<DashboardView>
                         _selectedDemplotIndex = index;
                         _selectedNodeIndex = 0; // Reset sub-node selection
                       });
+                      _fetchEwsForCurrentDemplot(); // Fetch EWS for newly selected demplot
                     }
                   },
                   child: AnimatedContainer(
@@ -2184,14 +2213,20 @@ class _DashboardViewState extends State<DashboardView>
       return;
     }
 
+    final demplot = _currentDemplot;
+    final device = _currentDevice;
+    final sensorData = _currentSensorData;
+    final ewsStatus = _ewsStatusMap[_selectedDemplotIndex];
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => DssActuationDialog(
-        demplot: _currentDemplot,
-        device: _currentDevice,
-        sensorData: _currentSensorData,
+        demplot: demplot,
+        device: device,
+        sensorData: sensorData,
         type: type,
+        ewsStatus: ewsStatus,
         onConfirm: (physicalValue) {
           final durationSeconds = ActuationCalculator.calculateDurationSeconds(
               _selectedDemplotIndex, type, physicalValue);
@@ -2203,6 +2238,186 @@ class _DashboardViewState extends State<DashboardView>
             doseLabel: doseLabel,
           );
         },
+      ),
+    );
+  }
+
+  // ============================================================================
+  // EWS CARD — Early Warning System for Caterpillar Pests
+  // ============================================================================
+  Widget _buildEwsCard() {
+    final ews = _ewsStatusMap[_selectedDemplotIndex];
+    if (ews == null) {
+      if (_isLoadingEws) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.borderColor),
+            boxShadow: AppTheme.softShadow,
+          ),
+          child: const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      }
+      return const SizedBox.shrink(); // Hide if no data
+    }
+
+    Color bgColor;
+    Color iconColor;
+    IconData statusIcon;
+
+    if (ews.isSafe) {
+      bgColor = const Color(0xFFECFDF5);
+      iconColor = const Color(0xFF10B981);
+      statusIcon = Icons.shield_outlined;
+    } else if (ews.isWarning) {
+      bgColor = const Color(0xFFFFFBEB);
+      iconColor = const Color(0xFFF59E0B);
+      statusIcon = Icons.warning_amber_rounded;
+    } else {
+      bgColor = const Color(0xFFFEF2F2);
+      iconColor = const Color(0xFFEF4444);
+      statusIcon = Icons.crisis_alert;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: iconColor.withValues(alpha: 0.3)),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(statusIcon, color: iconColor, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Peringatan Dini Hama (EWS)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      ews.riskLabel,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: iconColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_isLoadingEws)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            ews.actionRecommendation,
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'HST: ${ews.hst} Hari',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: iconColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      ews.isAiSource ? Icons.auto_awesome : Icons.rule,
+                      size: 12,
+                      color: iconColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      ews.isAiSource
+                          ? 'AI (${(ews.confidence * 100).toInt()}%)'
+                          : 'Standar Agronomi',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: iconColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!ews.pesticideAllowed)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.block, size: 12, color: Color(0xFFDC2626)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Pestisida Dilarang',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

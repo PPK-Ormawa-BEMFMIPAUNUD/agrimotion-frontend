@@ -59,6 +59,22 @@ class ApiConstants {
   static const String usersEndpoint = '$baseUrl/users';
 
   // ---------------------------------------------------------------------------
+  // EWS Endpoints
+  // ---------------------------------------------------------------------------
+
+  /// GET - Fetch Early Warning System status for caterpillar pests.
+  static const String ewsStatus = '/api/ews/status';
+
+  /// Helper to get EWS Status URL dynamically based on baseUrl.
+  static String ewsStatusEndpoint(int demplotId) {
+    // Prevent double '/api' if baseUrl already ends with '/api'
+    final base = baseUrl.endsWith('/api')
+        ? baseUrl.substring(0, baseUrl.length - 4)
+        : baseUrl;
+    return '$base$ewsStatus/$demplotId';
+  }
+
+  // ---------------------------------------------------------------------------
   // Alert Endpoints
   // ---------------------------------------------------------------------------
 

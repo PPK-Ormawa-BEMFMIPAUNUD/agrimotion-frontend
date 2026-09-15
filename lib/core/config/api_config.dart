@@ -18,6 +18,11 @@ class ApiConfig {
   static const String telemetryHistoryEndpoint =
       ApiConstants.telemetryHistoryEndpoint;
 
+  /// EWS Endpoints
+  static const String ewsStatus = ApiConstants.ewsStatus;
+  static String ewsStatusEndpoint(int demplotId) =>
+      ApiConstants.ewsStatusEndpoint(demplotId);
+
   /// Polling interval for live sensor data on the dashboard.
   static const Duration pollingInterval = ApiConstants.pollingInterval;
 
