@@ -4,6 +4,9 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/sensor_data.dart';
 import '../models/ews_status_model.dart';
+import '../models/soil_moisture_trend_model.dart';
+import '../models/analytics_model.dart';
+import '../constants/api_constants.dart';
 import 'ews_service.dart';
 
 /// Service responsible for fetching sensor telemetry data
@@ -284,6 +287,87 @@ class SensorService {
         return Exception(
           'Server merespons dengan HTTP $statusCode.',
         );
+    }
+  }
+
+  /// Fetches 7-day soil moisture trends for a specific Demplot.
+  Future<List<SoilMoistureTrendModel>> fetchSoilMoistureTrends(
+    dynamic demplotId, {
+    int days = 7,
+  }) async {
+    try {
+      final endpoint = ApiConstants.soilMoistureTrendEndpoint(demplotId, days: days);
+      final uri = Uri.parse(endpoint);
+      final response = await _client
+          .get(uri, headers: _antiCacheHeaders)
+          .timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final dynamic body = jsonDecode(response.body);
+        List<dynamic> list = [];
+        if (body is Map<String, dynamic> && body['data'] is List) {
+          list = body['data'] as List;
+        } else if (body is List) {
+          list = body;
+        }
+        return list
+            .map((item) => SoilMoistureTrendModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw _buildHttpException(response.statusCode);
+      }
+    } on TimeoutException {
+      throw Exception('Koneksi ke server timeout saat mengambil tren kelembaban tanah.');
+    } on http.ClientException catch (e) {
+      throw Exception('Gagal terhubung ke server: ${e.message}');
+    } catch (e) {
+      throw Exception('Gagal memuat tren kelembaban: $e');
+    }
+  }
+
+  Future<AnalyticsOverviewModel> fetchAnalyticsOverview(dynamic demplotId, String period) async {
+    try {
+      final endpoint = ApiConstants.analyticsOverviewEndpoint(demplotId, period);
+      final response = await _client.get(Uri.parse(endpoint), headers: _antiCacheHeaders).timeout(ApiConfig.requestTimeout);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return AnalyticsOverviewModel.fromJson(body['data'] ?? body);
+      } else {
+        throw _buildHttpException(response.statusCode);
+      }
+    } catch (e) {
+      throw Exception('Gagal memuat overview analitik: $e');
+    }
+  }
+
+  Future<List<CorrelationPointModel>> fetchCorrelationAnalytics(dynamic demplotId, String period) async {
+    try {
+      final endpoint = ApiConstants.analyticsCorrelationEndpoint(demplotId, period);
+      final response = await _client.get(Uri.parse(endpoint), headers: _antiCacheHeaders).timeout(ApiConfig.requestTimeout);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        List<dynamic> data = body['data'] ?? body;
+        return data.map((e) => CorrelationPointModel.fromJson(e)).toList();
+      } else {
+        throw _buildHttpException(response.statusCode);
+      }
+    } catch (e) {
+      throw Exception('Gagal memuat korelasi: $e');
+    }
+  }
+
+  Future<WaterUsageAnalyticsModel> fetchWaterUsageAnalytics(String period) async {
+    try {
+      final endpoint = ApiConstants.waterUsageAnalyticsEndpoint(period);
+      final response = await _client.get(Uri.parse(endpoint), headers: _antiCacheHeaders).timeout(ApiConfig.requestTimeout);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return WaterUsageAnalyticsModel.fromJson(body['data'] ?? body);
+      } else {
+        throw _buildHttpException(response.statusCode);
+      }
+    } catch (e) {
+      throw Exception('Gagal memuat data penggunaan air: $e');
     }
   }
 

@@ -11,7 +11,14 @@ import '../../../core/services/sensor_service.dart';
 import '../../../core/services/mqtt_service.dart';
 import '../../../core/utils/pump_command.dart';
 import '../../../core/utils/actuation_calculator.dart';
+import '../../../core/models/watering_log_model.dart';
+import '../../../core/services/watering_log_service.dart';
+import '../../../core/models/crop_cycle_model.dart';
+import '../../../core/services/crop_cycle_service.dart';
 import 'widgets/dss_actuation_dialog.dart';
+import 'widgets/soil_moisture_trend_card.dart';
+import 'widgets/crop_cycle_banner.dart';
+
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
 
@@ -63,6 +70,10 @@ class _DashboardViewState extends State<DashboardView>
   final Map<int, EwsStatusModel> _ewsStatusMap = {};
   bool _isLoadingEws = false;
 
+  final CropCycleService _cropCycleService = CropCycleService();
+  CropCycleModel? _activeCropCycle;
+  bool _isLoadingCropCycle = false;
+
   // Web Unload Fail-Safe Subscriptions
   StreamSubscription? _beforeUnloadSub;
   StreamSubscription? _unloadSub;
@@ -90,6 +101,8 @@ class _DashboardViewState extends State<DashboardView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _fetchAllTelemetry();
+    _fetchWateringLogs();
+    _fetchCropCycle();
     _startPollingTimer();
     _listenMqttStatus();
     
@@ -211,6 +224,41 @@ class _DashboardViewState extends State<DashboardView>
     }
   }
 
+  Future<void> _fetchWateringLogs() async {
+    if (!mounted) return;
+    setState(() => _isLoadingWateringLogs = true);
+    
+    try {
+      final logs = await _wateringLogService.fetchRecentLogs(limit: 5);
+      if (mounted) {
+        setState(() {
+          _wateringLogs = logs;
+          _isLoadingWateringLogs = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingWateringLogs = false;
+        });
+      }
+    }
+  }
+  Future<void> _fetchCropCycle() async {
+    setState(() => _isLoadingCropCycle = true);
+    try {
+      final cycle = await _cropCycleService.fetchActiveCycle(_selectedDemplotIndex);
+      if (mounted) {
+        setState(() {
+          _activeCropCycle = cycle;
+          _isLoadingCropCycle = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingCropCycle = false);
+    }
+  }
+
   Future<void> _fetchAllTelemetry() async {
     // Prevent overlapping requests (slow network + timer fire)
     if (_isFetching) return;
@@ -310,22 +358,9 @@ class _DashboardViewState extends State<DashboardView>
   Timer? _sprayCountdownTimer;
   String? _activeSprayingType;
 
-  final List<Map<String, String>> _sprayLogs = [
-    {
-      "type": "Pupuk Cair",
-      "demplot": "Demplot 1 (Bunga Pacah)",
-      "duration": "20.0g - 162s",
-      "time": "Tadi pagi 08:30",
-      "status": "Selesai"
-    },
-    {
-      "type": "Pestisida",
-      "demplot": "Demplot 2 (Sawi)",
-      "duration": "1.0mL - 27s",
-      "time": "Kemarin 16:45",
-      "status": "Selesai"
-    }
-  ];
+  final WateringLogService _wateringLogService = WateringLogService();
+  List<WateringLogModel> _wateringLogs = [];
+  bool _isLoadingWateringLogs = true;
 
   void _startSpraying({required String type, required int durationSeconds, required String doseLabel}) {
     if (_isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater) {
@@ -405,13 +440,17 @@ class _DashboardViewState extends State<DashboardView>
           _isSprayingWater = false;
           _activeSprayingType = null;
           _sprayRemainingSeconds = 0;
-          _sprayLogs.insert(0, {
-            "type": type,
-            "demplot": '${_currentDemplot.name} (${_currentDemplot.commodity})',
-            "duration": doseLabel,
-            "time": "Baru saja",
-            "status": "Selesai"
-          });
+          String backendType = 'WATER';
+          if (type == 'Pupuk Cair') backendType = 'FERTILIZER';
+          if (type == 'Pestisida') backendType = 'PESTICIDE';
+          
+          _wateringLogs.insert(0, WateringLogModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            deviceId: _currentDevice.deviceId,
+            type: backendType,
+            duration: durationSeconds,
+            createdAt: DateTime.now(),
+          ));
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -557,10 +596,18 @@ class _DashboardViewState extends State<DashboardView>
   // BUILD
   // ---------------------------------------------------------------------------
 
+  Future<void> _handleRefresh() async {
+    await Future.wait([
+      _fetchAllTelemetry(),
+      _fetchCropCycle(),
+      _fetchWateringLogs(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _fetchAllTelemetry,
+      onRefresh: _handleRefresh,
       color: AppTheme.primaryColor,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -569,6 +616,19 @@ class _DashboardViewState extends State<DashboardView>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDemplotSelector(),
+            const SizedBox(height: 16),
+            if (_isLoadingCropCycle)
+              const Center(child: CircularProgressIndicator())
+            else
+              CropCycleBanner(
+                activeCycle: _activeCropCycle,
+                demplotId: _selectedDemplotIndex,
+                demplotName: _currentDemplot.name,
+                onStateChanged: () {
+                  _fetchCropCycle();
+                  _fetchAllTelemetry();
+                },
+              ),
             const SizedBox(height: 16),
             _buildSystemStatus(),
             const SizedBox(height: 16),
@@ -634,6 +694,7 @@ class _DashboardViewState extends State<DashboardView>
                         _selectedNodeIndex = 0; // Reset sub-node selection
                       });
                       _fetchEwsForCurrentDemplot(); // Fetch EWS for newly selected demplot
+                      _fetchCropCycle(); // Fetch active crop cycle
                     }
                   },
                   child: AnimatedContainer(
@@ -1768,6 +1829,65 @@ class _DashboardViewState extends State<DashboardView>
   // ============================================================================
   // SPRAY CONTROL SECTION — Pupuk Cair & Pestisida Aktuator
   // ============================================================================
+
+  Widget _buildMqttBadge(bool isSpraying) {
+    return ValueListenableBuilder<MqttConnectionState>(
+      valueListenable: MqttService.instance.connectionState,
+      builder: (context, mqttState, _) {
+        final bool mqttConnected = mqttState == MqttConnectionState.connected;
+        Color badgeBg, badgeBorder, dotColor, textColor;
+        String label;
+
+        if (isSpraying) {
+          badgeBg = const Color(0xFFFEF3C7);
+          badgeBorder = const Color(0xFFF59E0B);
+          dotColor = const Color(0xFFD97706);
+          textColor = const Color(0xFFB45309);
+          label = 'MENYEMPROT';
+        } else if (mqttConnected) {
+          badgeBg = const Color(0xFFDCFCE7);
+          badgeBorder = const Color(0xFF16A34A);
+          dotColor = const Color(0xFF16A34A);
+          textColor = const Color(0xFF15803D);
+          label = 'MQTT TERHUBUNG';
+        } else {
+          badgeBg = const Color(0xFFFEE2E2);
+          badgeBorder = const Color(0xFFFCA5A5);
+          dotColor = const Color(0xFFDC2626);
+          textColor = const Color(0xFFB91C1C);
+          label = 'MQTT TERPUTUS';
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: badgeBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: badgeBorder, width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7, height: 7,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSprayControlSection() {
     final isSpraying =
         _isSprayingFertilizer || _isSprayingPesticide || _isSprayingWater;
@@ -1784,110 +1904,46 @@ class _DashboardViewState extends State<DashboardView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.shower_rounded, size: 16, color: Colors.white),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.shower_rounded,
-                              size: 16, color: Colors.white),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Kontrol Penyemprotan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Kontrol Penyemprotan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       'Target: ${_currentDemplot.name} (${_currentDemplot.commodity})',
                       style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF64748B)),
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              ValueListenableBuilder<MqttConnectionState>(
-                valueListenable: MqttService.instance.connectionState,
-                builder: (context, mqttState, _) {
-                  final bool mqttConnected =
-                      mqttState == MqttConnectionState.connected;
-
-                  Color badgeBg;
-                  Color badgeBorder;
-                  Color dotColor;
-                  Color textColor;
-                  String label;
-
-                  if (isSpraying) {
-                    badgeBg = const Color(0xFFFEF3C7);
-                    badgeBorder = const Color(0xFFF59E0B);
-                    dotColor = const Color(0xFFD97706);
-                    textColor = const Color(0xFFB45309);
-                    label = 'MENYEMPROT';
-                  } else if (mqttConnected) {
-                    badgeBg = const Color(0xFFDCFCE7);
-                    badgeBorder = const Color(0xFF16A34A);
-                    dotColor = const Color(0xFF16A34A);
-                    textColor = const Color(0xFF15803D);
-                    label = 'MQTT TERHUBUNG';
-                  } else {
-                    badgeBg = const Color(0xFFFEE2E2);
-                    badgeBorder = const Color(0xFFFCA5A5);
-                    dotColor = const Color(0xFFDC2626);
-                    textColor = const Color(0xFFB91C1C);
-                    label = 'MQTT TERPUTUS';
-                  }
-
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: badgeBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: badgeBorder, width: 1),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: dotColor,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+              const SizedBox(width: 8),
+              _buildMqttBadge(isSpraying),
             ],
           ),
 
@@ -1944,9 +2000,9 @@ class _DashboardViewState extends State<DashboardView>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade700,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      minimumSize: const Size(0, 48),
+                      alignment: Alignment.center,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -2038,67 +2094,89 @@ class _DashboardViewState extends State<DashboardView>
                   color: Color(0xFF64748B),
                 ),
               ),
-              Text(
-                '${_sprayLogs.length} Log',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w600,
+              if (_isLoadingWateringLogs && _wateringLogs.isEmpty)
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF94A3B8)),
+                )
+              else
+                Text(
+                  '${_wateringLogs.length} Log',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 8),
-          ..._sprayLogs.take(2).map((log) => Padding(
-                padding: const EdgeInsets.only(bottom: 6.0),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+
+          if (!_isLoadingWateringLogs && _wateringLogs.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.history_toggle_off_rounded, size: 24, color: Color(0xFF94A3B8)),
+                    SizedBox(height: 6),
+                    Text(
+                      'Belum ada riwayat penyemprotan tercatat',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ..._wateringLogs.take(5).map((log) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            log['type'] == 'Pupuk Cair'
-                                ? Icons.eco
-                                : log['type'] == 'Siram Air'
-                                    ? Icons.water_drop
-                                    : Icons.shield,
-                            size: 14,
-                            color: log['type'] == 'Pupuk Cair'
-                                ? AppTheme.primaryColor
-                                : log['type'] == 'Siram Air'
-                                    ? const Color(0xFF0284C7)
-                                    : const Color(0xFFD97706),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${log['type']} (${log['duration']}) · ${log['demplot']}',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF334155),
+                      Icon(log.logIcon, size: 16, color: log.logColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${log.typeLabel} (${log.duration}s)',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        log['time'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF94A3B8),
+                            const SizedBox(height: 2),
+                            Text(
+                              log.demplotName,
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        log.formattedTime,
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
-                ),
-              )),
+                )),
         ],
       ),
     );
@@ -2166,7 +2244,6 @@ class _DashboardViewState extends State<DashboardView>
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: 38,
             child: ElevatedButton.icon(
               onPressed: isDisabled ? null : (isThisSpraying ? _stopSpraying : onAction),
               icon: Icon(
@@ -2185,8 +2262,13 @@ class _DashboardViewState extends State<DashboardView>
                   fontWeight: FontWeight.bold,
                   fontSize: 12.5,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                alignment: Alignment.center,
                 backgroundColor: isDisabled 
                     ? const Color(0xFFE2E8F0) 
                     : (isThisSpraying ? Colors.red.shade700 : accentColor),
@@ -2452,109 +2534,9 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _buildBarChartCard() {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
-        boxShadow: AppTheme.softShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Tren Kelembaban Tanah',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A)),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Data historis 7 hari terakhir',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Mingguan',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            height: 180,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _barItem('Sen', 100, constraints.maxWidth),
-                    _barItem('Sel', 90, constraints.maxWidth),
-                    _barItem('Rab', 80, constraints.maxWidth),
-                    _barItem('Kam', 160, constraints.maxWidth),
-                    _barItem('Jum', 140, constraints.maxWidth),
-                    _barItem('Sab', 120, constraints.maxWidth),
-                    _barItem('Min', 110, constraints.maxWidth),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+    return SoilMoistureTrendCard(demplotId: _selectedDemplotIndex);
   }
 
-  Widget _barItem(String day, double height, double containerWidth) {
-    final barWidth = (containerWidth / 10).clamp(14.0, 34.0);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          width: barWidth,
-          height: height,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF16A34A), Color(0xFF0F7646)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          day,
-          style: const TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildDeviceInfoCard() {
     final data = _currentSensorData;

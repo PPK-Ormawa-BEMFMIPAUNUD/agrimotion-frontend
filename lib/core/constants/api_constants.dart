@@ -38,6 +38,29 @@ class ApiConstants {
   /// Query params: `deviceId` (UUID), `date`, `page`, `limit`, `sort`
   static const String telemetryHistoryEndpoint = '$baseUrl/telemetry/history';
 
+  /// GET - Fetch 7-day soil moisture trend for a demplot.
+  static String soilMoistureTrendEndpoint(dynamic demplotId, {int days = 7}) {
+    final base = baseUrl.endsWith('/api')
+        ? baseUrl.substring(0, baseUrl.length - 4)
+        : baseUrl;
+    return '$base/api/telemetry/trends/soil-moisture/$demplotId?days=$days';
+  }
+
+  static String analyticsOverviewEndpoint(dynamic demplotId, String period) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/telemetry/analytics/overview?demplotId=$demplotId&period=$period';
+  }
+
+  static String analyticsCorrelationEndpoint(dynamic demplotId, String period) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/telemetry/analytics/correlation?demplotId=$demplotId&period=$period';
+  }
+
+  static String waterUsageAnalyticsEndpoint(String period) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/actuations/analytics/water-usage?period=$period';
+  }
+
   // ---------------------------------------------------------------------------
   // Farm & Device Endpoints
   // ---------------------------------------------------------------------------
@@ -100,6 +123,30 @@ class ApiConstants {
 
   /// GET - Fetch system information (CPU, memory, uptime, services).
   static const String systemInfoEndpoint = '$baseUrl/system/info';
+
+  // ---------------------------------------------------------------------------
+  // Crop Cycle Endpoints
+  // ---------------------------------------------------------------------------
+
+  static String cropCycleActiveEndpoint(int demplotId) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/crop-cycles/active/$demplotId';
+  }
+
+  static String get cropCycleStartEndpoint {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/crop-cycles/start';
+  }
+
+  static String cropCycleHarvestEndpoint(String id) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/crop-cycles/harvest/$id';
+  }
+
+  static String cropCycleHistoryEndpoint(int demplotId) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/crop-cycles/history/$demplotId';
+  }
 
   // ---------------------------------------------------------------------------
   // Timeouts & Intervals
