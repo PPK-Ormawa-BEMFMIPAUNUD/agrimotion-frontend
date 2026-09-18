@@ -531,9 +531,19 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         final success = await _sensorService.createActivity(payload);
         if (success) {
           _fetchActivities();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aktivitas berhasil disimpan')));
+          _fetchDemplotAnalytics();
+          _fetchOverview();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Aktivitas berhasil dicatat & disinkronkan.')),
+            );
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyimpan aktivitas')));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Gagal mencatat aktivitas budidaya.')),
+            );
+          }
         }
       },
     );
