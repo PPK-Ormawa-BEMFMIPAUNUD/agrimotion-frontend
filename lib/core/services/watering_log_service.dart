@@ -2,26 +2,43 @@ import 'dart:convert';
 import 'package:agrimotion/core/constants/api_constants.dart';
 import 'package:agrimotion/core/network/api_client.dart';
 import 'package:agrimotion/core/models/watering_log_model.dart';
+import 'package:agrimotion/features/auth/data/token_storage.dart';
 
 class WateringLogService {
   final ApiClient _apiClient;
+  final TokenStorage _tokenStorage;
 
-  WateringLogService({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  WateringLogService({ApiClient? apiClient, TokenStorage? tokenStorage})
+      : _apiClient = apiClient ?? ApiClient(),
+        _tokenStorage = tokenStorage ?? TokenStorage.instance;
+
+  /// Checks whether user is currently authenticated with a valid token.
+  Future<bool> isUserLoggedIn() async {
+    return await _tokenStorage.hasValidToken();
+  }
 
   /// Fetches recent watering logs from the backend.
-  /// Falls back to mock data if the network is down.
+  /// Automatically injects JWT Bearer token and intercepts 401 to clear expired session.
+  /// Falls back to mock data if network is down.
   Future<List<WateringLogModel>> fetchRecentLogs({int limit = 5}) async {
+    final token = await _tokenStorage.getToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+
     final candidateEndpoints = [
       '${ApiConstants.baseUrl}/watering-logs?limit=$limit',
       '${ApiConstants.baseUrl}/api/watering-logs?limit=$limit',
       '${ApiConstants.baseUrl}/actuations/logs?limit=$limit',
+      '${ApiConstants.baseUrl}/api/watering/history?limit=$limit',
+      '${ApiConstants.baseUrl}/api/watering/logs?limit=$limit',
       '${ApiConstants.baseUrl}/activity-logs?limit=$limit',
     ];
 
     for (final endpoint in candidateEndpoints) {
       try {
-        final response = await _apiClient.get(Uri.parse(endpoint));
+        final response = await _apiClient.get(Uri.parse(endpoint), headers: headers);
         if (response.statusCode >= 200 && response.statusCode < 300) {
           final dynamic body = _apiClient.parseJson(response);
           List<WateringLogModel> logs = [];
@@ -54,8 +71,16 @@ class WateringLogService {
             logs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
             return logs.take(limit).toList();
           }
+        } else if (response.statusCode == 401) {
+          // Token expired or invalid: clear session and halt redundant requests
+          await _tokenStorage.clearSession();
+          break;
         }
-      } catch (_) {
+      } catch (e) {
+        if (e is UnauthorizedException) {
+          await _tokenStorage.clearSession();
+          break;
+        }
         // Continue to the next fallback endpoint if there's an error
         continue;
       }

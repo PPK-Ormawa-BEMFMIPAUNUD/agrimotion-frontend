@@ -17,8 +17,8 @@ class AnalyticsView extends StatefulWidget {
 
 class _AnalyticsViewState extends State<AnalyticsView> {
   String _selectedPeriod = 'week';
-  final int _demplotId = 0; // Menggunakan Demplot 1 sebagai default
-  final String _demplotName = 'Demplot 1';
+  int _demplotId = 0; // Menggunakan Demplot 1 sebagai default
+  String _demplotName = 'Demplot 1';
   final SensorService _sensorService = SensorService();
   final CropCycleService _cropCycleService = CropCycleService();
 
@@ -64,15 +64,19 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     });
     try {
       final data = await _sensorService.fetchAnalyticsOverview(_demplotId, _selectedPeriod);
-      setState(() {
-        _overviewData = data;
-        _isOverviewLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _overviewData = data;
+          _isOverviewLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _overviewError = e.toString();
-        _isOverviewLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _overviewError = e.toString();
+          _isOverviewLoading = false;
+        });
+      }
     }
   }
 
@@ -83,15 +87,19 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     });
     try {
       final data = await _sensorService.fetchCorrelationAnalytics(_demplotId, _selectedPeriod);
-      setState(() {
-        _correlationData = data;
-        _isCorrelationLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _correlationData = data;
+          _isCorrelationLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _correlationError = e.toString();
-        _isCorrelationLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _correlationError = e.toString();
+          _isCorrelationLoading = false;
+        });
+      }
     }
   }
 
@@ -102,15 +110,22 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     });
     try {
       final data = await _sensorService.fetchWaterUsageAnalytics(_selectedPeriod);
-      setState(() {
-        _waterUsageData = data;
-        _isWaterUsageLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _waterUsageData = data;
+          _isWaterUsageLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _waterUsageError = e.toString();
-        _isWaterUsageLoading = false;
-      });
+      final errorMsg = e.toString().contains('Sesi Anda telah berakhir')
+          ? 'Sesi Anda telah berakhir, silakan login kembali.'
+          : e.toString();
+      if (mounted) {
+        setState(() {
+          _waterUsageError = errorMsg;
+          _isWaterUsageLoading = false;
+        });
+      }
     }
   }
 
@@ -199,6 +214,25 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       runSpacing: 12,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        // Demplot Selection Tabs (Demplot 1, 2, 3)
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDemplotTabButton("Demplot 1", 0),
+              Container(width: 1, height: 20, color: Colors.grey.shade300),
+              _buildDemplotTabButton("Demplot 2", 1),
+              Container(width: 1, height: 20, color: Colors.grey.shade300),
+              _buildDemplotTabButton("Demplot 3", 2),
+            ],
+          ),
+        ),
+        // Period Selection Tabs
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
@@ -268,6 +302,36 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.green.shade50 : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? AppTheme.primaryColor : Colors.grey.shade700,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDemplotTabButton(String label, int id) {
+    final isActive = _demplotId == id;
+    return InkWell(
+      onTap: () {
+        if (!isActive) {
+          setState(() {
+            _demplotId = id;
+            _demplotName = 'Demplot ${id + 1}';
+          });
+          _fetchAllData();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? Colors.green.shade50 : Colors.transparent,
           borderRadius: BorderRadius.circular(7),

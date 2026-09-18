@@ -43,13 +43,13 @@ class WaterUsageDemplotCard extends StatelessWidget {
             style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
           const SizedBox(height: 24),
-          _buildContent(),
+          _buildContent(context),
         ],
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     if (isLoading) {
       return Column(
         children: List.generate(
@@ -67,10 +67,17 @@ class WaterUsageDemplotCard extends StatelessWidget {
     }
 
     if (errorMessage != null) {
+      final isAuthError = errorMessage!.contains('401') ||
+          errorMessage!.contains('Sesi') ||
+          errorMessage!.contains('autentikasi');
       return Center(
         child: Column(
           children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 32),
+            Icon(
+              isAuthError ? Icons.lock_outline : Icons.error_outline,
+              color: Colors.redAccent,
+              size: 32,
+            ),
             const SizedBox(height: 12),
             Text(
               errorMessage!,
@@ -78,10 +85,22 @@ class WaterUsageDemplotCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Coba Lagi', style: TextStyle(color: AppTheme.primaryColor)),
-            ),
+            if (isAuthError)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/login');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Login Kembali'),
+              )
+            else
+              TextButton(
+                onPressed: onRetry,
+                child: const Text('Coba Lagi', style: TextStyle(color: AppTheme.primaryColor)),
+              ),
           ],
         ),
       );

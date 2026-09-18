@@ -153,15 +153,25 @@ class CorrelationChartCard extends StatelessWidget {
     }
 
     if (errorMessage != null) {
+      final is400 = errorMessage!.contains('400') || errorMessage!.contains('skema');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 32),
+            Icon(
+              is400 ? Icons.info_outline : Icons.error_outline,
+              color: is400 ? Colors.grey.shade600 : Colors.redAccent,
+              size: 32,
+            ),
             const SizedBox(height: 12),
             Text(
-              errorMessage!,
-              style: const TextStyle(fontSize: 12, color: Colors.redAccent),
+              is400
+                  ? 'Data telemetri korelasi belum tersedia untuk demplot ini.'
+                  : errorMessage!,
+              style: TextStyle(
+                fontSize: 12,
+                color: is400 ? Colors.grey.shade700 : Colors.redAccent,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

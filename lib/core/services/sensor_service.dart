@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../features/auth/data/token_storage.dart';
 import '../config/api_config.dart';
 import '../models/sensor_data.dart';
 import '../models/ews_status_model.dart';
@@ -38,6 +39,17 @@ class SensorService {
         'Expires': '0',
         'Accept': 'application/json',
       };
+
+  /// Builds headers with optional JWT Authorization token from TokenStorage.
+  Future<Map<String, String>> _getHeaders({bool requiresAuth = false}) async {
+    final headers = Map<String, String>.from(_antiCacheHeaders);
+    headers['Content-Type'] = 'application/json';
+    final token = await TokenStorage.instance.getToken();
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   /// Builds a URI with optional `deviceId` query parameter.
   ///
@@ -340,34 +352,106 @@ class SensorService {
     }
   }
 
-  Future<List<CorrelationPointModel>> fetchCorrelationAnalytics(dynamic demplotId, String period) async {
+  /// Fetches latest telemetry for a specific demplot or device.
+  /// Guarantees integer parsing of demplotId (0, 1, 2) and graceful empty state.
+  Future<SensorData?> fetchLatestTelemetry({dynamic demplotId, String? deviceId}) async {
     try {
-      final endpoint = ApiConstants.analyticsCorrelationEndpoint(demplotId, period);
-      final response = await _client.get(Uri.parse(endpoint), headers: _antiCacheHeaders).timeout(ApiConfig.requestTimeout);
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        List<dynamic> data = body['data'] ?? body;
-        return data.map((e) => CorrelationPointModel.fromJson(e)).toList();
-      } else {
-        throw _buildHttpException(response.statusCode);
+      final Map<String, String> queryParams = {};
+      if (demplotId != null) {
+        final parsed = int.tryParse(demplotId.toString());
+        if (parsed != null) {
+          queryParams['demplotId'] = parsed.toString();
+        }
       }
-    } catch (e) {
-      throw Exception('Gagal memuat korelasi: $e');
+      if (deviceId != null && deviceId.isNotEmpty && deviceId.toUpperCase() != 'ALL') {
+        queryParams['deviceId'] = deviceId;
+      }
+
+      Uri uri = Uri.parse(ApiConfig.latestTelemetryEndpoint);
+      if (queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
+
+      final response = await _client
+          .get(uri, headers: _antiCacheHeaders)
+          .timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final dynamic jsonBody = jsonDecode(response.body);
+        final dynamic data = jsonBody is Map<String, dynamic> ? jsonBody['data'] : jsonBody;
+        if (data == null) {
+          return null;
+        }
+        if (data is List) {
+          if (data.isEmpty) return null;
+          return SensorData.fromJson(data.first as Map<String, dynamic>);
+        }
+        return SensorData.fromJson(data as Map<String, dynamic>);
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
-  Future<WaterUsageAnalyticsModel> fetchWaterUsageAnalytics(String period) async {
+  Future<List<CorrelationPointModel>> fetchCorrelationAnalytics(dynamic demplotId, String period) async {
     try {
-      final endpoint = ApiConstants.waterUsageAnalyticsEndpoint(period);
-      final response = await _client.get(Uri.parse(endpoint), headers: _antiCacheHeaders).timeout(ApiConfig.requestTimeout);
+      final parsedDemplotId = int.tryParse(demplotId.toString()) ?? 0;
+      final endpoint = ApiConstants.analyticsCorrelationEndpoint(parsedDemplotId, period);
+      final headers = await _getHeaders();
+      final response = await _client
+          .get(Uri.parse(endpoint), headers: headers)
+          .timeout(ApiConfig.requestTimeout);
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return WaterUsageAnalyticsModel.fromJson(body['data'] ?? body);
+        final dynamic rawData = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        if (rawData == null || (rawData is List && rawData.isEmpty)) {
+          return [];
+        }
+        if (rawData is List) {
+          return rawData
+              .whereType<Map<String, dynamic>>()
+              .map((e) => CorrelationPointModel.fromJson(e))
+              .toList();
+        }
+        return [];
+      } else {
+        // Return empty list on non-200 to prevent throwing raw 400 error dialogs
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<WaterUsageAnalyticsModel?> fetchWaterUsageAnalytics(String period) async {
+    try {
+      final endpoint = ApiConstants.waterUsageAnalyticsEndpoint(period);
+      final headers = await _getHeaders(requiresAuth: true);
+      final response = await _client
+          .get(Uri.parse(endpoint), headers: headers)
+          .timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final dynamic data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        if (data == null) {
+          return null;
+        }
+        return WaterUsageAnalyticsModel.fromJson(data as Map<String, dynamic>);
+      } else if (response.statusCode == 401) {
+        await TokenStorage.instance.clearSession();
+        throw Exception('Sesi Anda telah berakhir, silakan login kembali.');
       } else {
         throw _buildHttpException(response.statusCode);
       }
+    } on TimeoutException {
+      throw Exception('Koneksi ke server timeout saat memuat data penggunaan air.');
+    } on http.ClientException catch (e) {
+      throw Exception('Gagal terhubung ke server: ${e.message}');
     } catch (e) {
-      throw Exception('Gagal memuat data penggunaan air: $e');
+      rethrow;
     }
   }
 
