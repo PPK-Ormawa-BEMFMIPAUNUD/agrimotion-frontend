@@ -11,7 +11,8 @@ class AnalyticsPdfGenerator {
     required String demplotName,
     required String period,
     required AnalyticsOverviewModel overview,
-    required WaterUsageAnalyticsModel waterUsage,
+    required DemplotAnalyticsModel demplotAnalytics,
+    required List<FarmActivityModel> activities,
     CropCycleModel? activeCropCycle,
   }) async {
     final pdf = pw.Document();
@@ -20,8 +21,9 @@ class AnalyticsPdfGenerator {
     final dateFormat = DateFormat('dd MMMM yyyy HH:mm');
 
     String periodLabel = 'Mingguan';
-    if (period == 'day') periodLabel = 'Harian';
-    else if (period == 'month') periodLabel = 'Bulanan';
+    if (period == '7d') periodLabel = '7 Hari';
+    else if (period == '30d') periodLabel = '30 Hari';
+    else if (period == 'cycle') periodLabel = 'Satu Siklus';
 
     pdf.addPage(
       pw.MultiPage(
@@ -33,7 +35,9 @@ class AnalyticsPdfGenerator {
           pw.SizedBox(height: 24),
           _buildSummarySection(overview),
           pw.SizedBox(height: 24),
-          _buildWaterUsageSection(waterUsage),
+          _buildSoilHealthSection(demplotAnalytics),
+          pw.SizedBox(height: 24),
+          _buildTreatmentLogSection(activities),
           pw.SizedBox(height: 24),
         ],
       ),
@@ -158,34 +162,54 @@ class AnalyticsPdfGenerator {
     );
   }
 
-  static pw.Widget _buildWaterUsageSection(WaterUsageAnalyticsModel waterUsage) {
+  static pw.Widget _buildSoilHealthSection(DemplotAnalyticsModel demplotAnalytics) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          '2. Riwayat & Akumulasi Penyiraman',
+          '2. Indeks Kesuburan Tanah (Soil Health Score)',
           style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 12),
+        pw.Text('Skor: ${demplotAnalytics.soilHealthScore}/100 (${demplotAnalytics.soilHealthStatus})'),
+        pw.SizedBox(height: 8),
+        pw.Text('Tren NPK:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        pw.Text('- Nitrogen (N): ${demplotAnalytics.npkTrends["n"]["value"]} mg/kg (Tren: ${demplotAnalytics.npkTrends["n"]["trend"]})'),
+        pw.Text('- Fosfor (P): ${demplotAnalytics.npkTrends["p"]["value"]} mg/kg (Tren: ${demplotAnalytics.npkTrends["p"]["trend"]})'),
+        pw.Text('- Kalium (K): ${demplotAnalytics.npkTrends["k"]["value"]} mg/kg (Tren: ${demplotAnalytics.npkTrends["k"]["trend"]})'),
+      ]
+    );
+  }
+
+  static pw.Widget _buildTreatmentLogSection(List<FarmActivityModel> activities) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          '3. Log Aktivitas Budidaya (Perlakuan Lahan)',
+          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 12),
+        activities.isEmpty ? pw.Text('Belum ada aktivitas tercatat.') :
         pw.Table(
           border: pw.TableBorder.all(color: PdfColors.grey400),
           columnWidths: {
-            0: const pw.FlexColumnWidth(2),
-            1: const pw.FlexColumnWidth(2),
-            2: const pw.FlexColumnWidth(1.5),
-            3: const pw.FlexColumnWidth(1.5),
+            0: const pw.FlexColumnWidth(1.5),
+            1: const pw.FlexColumnWidth(1.5),
+            2: const pw.FlexColumnWidth(3),
           },
           children: [
-            _buildTableRow(['Area Demplot', 'Komoditas', 'Durasi Pompa (dtk)', 'Volume (Liter)'], isHeader: true),
-            ...waterUsage.demplots.map((d) {
-              return _buildTableRow([
-                d.name,
-                d.commodity,
-                d.totalDurationSeconds.toString(),
-                d.estimatedLiters.toStringAsFixed(1),
-              ]);
+            _buildTableRow(['Tanggal', 'Jenis', 'Detail'], isHeader: true),
+            ...activities.map((d) {
+              final dateStr = DateFormat('dd/MM/yy HH:mm').format(d.executedAt);
+              String typeStr = d.type == 'WATERING' ? 'Penyiraman' : d.type == 'FERTILIZATION' ? 'Pemupukan' : 'Penyemprotan';
+              String detail = '';
+              if (d.volumeLiter != null) detail += 'Vol: ${d.volumeLiter}L. ';
+              if (d.substanceName != null) detail += 'Bahan: ${d.substanceName} (${d.dosage}). ';
+              if (d.notes != null) detail += 'Catatan: ${d.notes}';
+              
+              return _buildTableRow([dateStr, typeStr, detail]);
             }).toList(),
-            _buildTableRow(['TOTAL', '-', '-', '${waterUsage.totalLiters.toStringAsFixed(1)} Liter'], isFooter: true),
           ],
         ),
       ],

@@ -5,8 +5,9 @@ import '../../../core/services/sensor_service.dart';
 import '../../../core/utils/analytics_pdf_generator.dart';
 import '../../../core/models/crop_cycle_model.dart';
 import '../../../core/services/crop_cycle_service.dart';
-import 'widgets/correlation_chart_card.dart';
-import 'widgets/water_usage_demplot_card.dart';
+import 'widgets/soil_health_card.dart';
+import 'widgets/daily_extremes_card.dart';
+import 'widgets/treatment_activity_section.dart';
 
 class AnalyticsView extends StatefulWidget {
   const AnalyticsView({super.key});
@@ -16,23 +17,25 @@ class AnalyticsView extends StatefulWidget {
 }
 
 class _AnalyticsViewState extends State<AnalyticsView> {
-  String _selectedPeriod = 'week';
+  String _selectedPeriod = '7d';
   int _demplotId = 0; // Menggunakan Demplot 1 sebagai default
   String _demplotName = 'Demplot 1';
   final SensorService _sensorService = SensorService();
   final CropCycleService _cropCycleService = CropCycleService();
 
   bool _isOverviewLoading = true;
-  bool _isCorrelationLoading = true;
-  bool _isWaterUsageLoading = true;
+  bool _isDemplotAnalyticsLoading = true;
+  bool _isActivitiesLoading = true;
 
   String? _overviewError;
-  String? _correlationError;
-  String? _waterUsageError;
+  String? _demplotAnalyticsError;
+  String? _activitiesError;
 
   AnalyticsOverviewModel? _overviewData;
-  List<CorrelationPointModel> _correlationData = [];
-  WaterUsageAnalyticsModel? _waterUsageData;
+  DemplotAnalyticsModel? _demplotAnalyticsData;
+  List<FarmActivityModel> _activitiesData = [];
+  String? _activityFilter;
+
   CropCycleModel? _activeCropCycle;
 
   @override
@@ -44,8 +47,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   Future<void> _fetchAllData() async {
     _fetchCropCycle();
     _fetchOverview();
-    _fetchCorrelation();
-    _fetchWaterUsage();
+    _fetchDemplotAnalytics();
+    _fetchActivities();
   }
 
   Future<void> _fetchCropCycle() async {
@@ -63,7 +66,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       _overviewError = null;
     });
     try {
-      final data = await _sensorService.fetchAnalyticsOverview(_demplotId, _selectedPeriod);
+      final periodForOverview = _selectedPeriod == '7d' ? 'week' : _selectedPeriod == '30d' ? 'month' : 'week';
+      final data = await _sensorService.fetchAnalyticsOverview(_demplotId, periodForOverview);
       if (mounted) {
         setState(() {
           _overviewData = data;
@@ -80,57 +84,54 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     }
   }
 
-  Future<void> _fetchCorrelation() async {
+  Future<void> _fetchDemplotAnalytics() async {
     setState(() {
-      _isCorrelationLoading = true;
-      _correlationError = null;
+      _isDemplotAnalyticsLoading = true;
+      _demplotAnalyticsError = null;
     });
     try {
-      final data = await _sensorService.fetchCorrelationAnalytics(_demplotId, _selectedPeriod);
+      final data = await _sensorService.fetchDemplotAnalytics(_demplotId, period: _selectedPeriod);
       if (mounted) {
         setState(() {
-          _correlationData = data;
-          _isCorrelationLoading = false;
+          _demplotAnalyticsData = data;
+          _isDemplotAnalyticsLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _correlationError = e.toString();
-          _isCorrelationLoading = false;
+          _demplotAnalyticsError = e.toString();
+          _isDemplotAnalyticsLoading = false;
         });
       }
     }
   }
 
-  Future<void> _fetchWaterUsage() async {
+  Future<void> _fetchActivities() async {
     setState(() {
-      _isWaterUsageLoading = true;
-      _waterUsageError = null;
+      _isActivitiesLoading = true;
+      _activitiesError = null;
     });
     try {
-      final data = await _sensorService.fetchWaterUsageAnalytics(_selectedPeriod);
+      final data = await _sensorService.fetchActivities(demplotId: _demplotId, type: _activityFilter);
       if (mounted) {
         setState(() {
-          _waterUsageData = data;
-          _isWaterUsageLoading = false;
+          _activitiesData = data;
+          _isActivitiesLoading = false;
         });
       }
     } catch (e) {
-      final errorMsg = e.toString().contains('Sesi Anda telah berakhir')
-          ? 'Sesi Anda telah berakhir, silakan login kembali.'
-          : e.toString();
       if (mounted) {
         setState(() {
-          _waterUsageError = errorMsg;
-          _isWaterUsageLoading = false;
+          _activitiesError = e.toString();
+          _isActivitiesLoading = false;
         });
       }
     }
   }
 
   Future<void> _exportData() async {
-    if (_overviewData == null || _waterUsageData == null) {
+    if (_overviewData == null || _demplotAnalyticsData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tunggu hingga semua data selesai dimuat sebelum ekspor.')),
       );
@@ -142,7 +143,8 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         demplotName: _demplotName,
         period: _selectedPeriod,
         overview: _overviewData!,
-        waterUsage: _waterUsageData!,
+        demplotAnalytics: _demplotAnalyticsData!,
+        activities: _activitiesData,
         activeCropCycle: _activeCropCycle,
       );
     } catch (e) {
@@ -242,11 +244,11 @@ class _AnalyticsViewState extends State<AnalyticsView> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildSegmentButton("Hari", 'day'),
+              _buildSegmentButton("7 Hari", '7d'),
               Container(width: 1, height: 20, color: Colors.grey.shade300),
-              _buildSegmentButton("Minggu", 'week'),
+              _buildSegmentButton("30 Hari", '30d'),
               Container(width: 1, height: 20, color: Colors.grey.shade300),
-              _buildSegmentButton("Bulan", 'month'),
+              _buildSegmentButton("Satu Siklus", 'cycle'),
             ],
           ),
         ),
@@ -487,27 +489,63 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   // 3. CHARTS SECTION
   // ==========================================================================
   Widget _buildChartsRow(double maxWidth) {
-    final correlationCard = CorrelationChartCard(
-      data: _correlationData,
-      isLoading: _isCorrelationLoading,
-      errorMessage: _correlationError,
-      onRetry: _fetchCorrelation,
-      activeCropCycle: _activeCropCycle,
+    if (_demplotAnalyticsError != null) {
+      return Center(
+        child: Text(
+          _demplotAnalyticsError!,
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
+    }
+    
+    if (_activitiesError != null) {
+      return Center(
+        child: Text(
+          _activitiesError!,
+          style: const TextStyle(color: Colors.red),
+        ),
+      );
+    }
+
+    final soilHealthCard = SoilHealthCard(
+      score: _demplotAnalyticsData?.soilHealthScore ?? 0,
+      status: _demplotAnalyticsData?.soilHealthStatus ?? '-',
+      isLoading: _isDemplotAnalyticsLoading,
     );
 
-    final waterUsageCard = WaterUsageDemplotCard(
-      data: _waterUsageData,
-      isLoading: _isWaterUsageLoading,
-      errorMessage: _waterUsageError,
-      onRetry: _fetchWaterUsage,
+    final extremesCard = DailyExtremesCard(
+      extremes: _demplotAnalyticsData?.extremes,
+      npkTrends: _demplotAnalyticsData?.npkTrends,
+      isLoading: _isDemplotAnalyticsLoading,
+    );
+
+    final treatmentSection = TreatmentActivitySection(
+      demplotId: _demplotId,
+      activities: _activitiesData,
+      isLoading: _isActivitiesLoading,
+      onFilterChanged: (filter) {
+        _activityFilter = filter;
+        _fetchActivities();
+      },
+      onActivityCreated: (payload) async {
+        final success = await _sensorService.createActivity(payload);
+        if (success) {
+          _fetchActivities();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aktivitas berhasil disimpan')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyimpan aktivitas')));
+        }
+      },
     );
 
     if (maxWidth < 1100) {
       return Column(
         children: [
-          correlationCard,
+          soilHealthCard,
           const SizedBox(height: 24),
-          waterUsageCard,
+          extremesCard,
+          const SizedBox(height: 24),
+          treatmentSection,
         ],
       );
     }
@@ -515,9 +553,18 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(flex: 7, child: correlationCard),
+        Expanded(
+          flex: 4,
+          child: Column(
+            children: [
+              soilHealthCard,
+              const SizedBox(height: 24),
+              extremesCard,
+            ],
+          ),
+        ),
         const SizedBox(width: 24),
-        Expanded(flex: 3, child: waterUsageCard),
+        Expanded(flex: 6, child: treatmentSection),
       ],
     );
   }

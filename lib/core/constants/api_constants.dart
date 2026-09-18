@@ -51,9 +51,19 @@ class ApiConstants {
     return '$base/api/telemetry/analytics/overview?demplotId=$demplotId&period=$period';
   }
 
-  static String analyticsCorrelationEndpoint(dynamic demplotId, String period) {
+  static String demplotAnalyticsEndpoint(int demplotId, {String period = '7d'}) {
     final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
-    return '$base/api/telemetry/analytics/correlation?demplotId=$demplotId&period=$period';
+    return '$base/api/analytics/demplot/$demplotId?period=$period';
+  }
+
+  static String get activitiesEndpoint {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/activities';
+  }
+
+  static String activitySummaryEndpoint(int demplotId) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    return '$base/api/activities/summary/$demplotId';
   }
 
   static String waterUsageAnalyticsEndpoint(String period) {

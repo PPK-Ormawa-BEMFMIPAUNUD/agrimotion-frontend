@@ -37,25 +37,95 @@ class AnalyticsOverviewModel {
   }
 }
 
-class CorrelationPointModel {
-  final String label;
-  final double temperature;
-  final double humidity;
-  final double soilMoisture;
+class FarmActivityModel {
+  final String id;
+  final int demplotId;
+  final String? cropCycleId;
+  final String type;
+  final double? volumeLiter;
+  final String? substanceName;
+  final String? dosage;
+  final String? notes;
+  final DateTime executedAt;
 
-  CorrelationPointModel({
-    required this.label,
-    required this.temperature,
-    required this.humidity,
-    required this.soilMoisture,
+  FarmActivityModel({
+    required this.id,
+    required this.demplotId,
+    this.cropCycleId,
+    required this.type,
+    this.volumeLiter,
+    this.substanceName,
+    this.dosage,
+    this.notes,
+    required this.executedAt,
   });
 
-  factory CorrelationPointModel.fromJson(Map<String, dynamic> json) {
-    return CorrelationPointModel(
-      label: json['label']?.toString() ?? '',
-      temperature: (json['temperature'] ?? 0).toDouble(),
-      humidity: (json['humidity'] ?? 0).toDouble(),
-      soilMoisture: (json['soilMoisture'] ?? 0).toDouble(),
+  factory FarmActivityModel.fromJson(Map<String, dynamic> json) {
+    return FarmActivityModel(
+      id: json['id'] ?? '',
+      demplotId: json['demplotId'] ?? 0,
+      cropCycleId: json['cropCycleId'],
+      type: json['type'] ?? '',
+      volumeLiter: json['volumeLiter'] != null ? (json['volumeLiter'] as num).toDouble() : null,
+      substanceName: json['substanceName'],
+      dosage: json['dosage'],
+      notes: json['notes'],
+      executedAt: json['executedAt'] != null ? DateTime.parse(json['executedAt']) : DateTime.now(),
+    );
+  }
+}
+
+class FarmActivitySummaryModel {
+  final double totalWateringLiters7d;
+  final double totalWateringLiters30d;
+  final int fertilizationCount;
+  final DateTime? lastFertilizationDate;
+  final int sprayingCount;
+  final DateTime? lastSprayingDate;
+
+  FarmActivitySummaryModel({
+    required this.totalWateringLiters7d,
+    required this.totalWateringLiters30d,
+    required this.fertilizationCount,
+    this.lastFertilizationDate,
+    required this.sprayingCount,
+    this.lastSprayingDate,
+  });
+
+  factory FarmActivitySummaryModel.fromJson(Map<String, dynamic> json) {
+    return FarmActivitySummaryModel(
+      totalWateringLiters7d: (json['totalWateringLiters7d'] ?? 0).toDouble(),
+      totalWateringLiters30d: (json['totalWateringLiters30d'] ?? 0).toDouble(),
+      fertilizationCount: json['fertilizationCount'] ?? 0,
+      lastFertilizationDate: json['lastFertilizationDate'] != null ? DateTime.parse(json['lastFertilizationDate']) : null,
+      sprayingCount: json['sprayingCount'] ?? 0,
+      lastSprayingDate: json['lastSprayingDate'] != null ? DateTime.parse(json['lastSprayingDate']) : null,
+    );
+  }
+}
+
+class DemplotAnalyticsModel {
+  final int soilHealthScore;
+  final String soilHealthStatus;
+  final Map<String, dynamic> extremes;
+  final Map<String, dynamic> npkTrends;
+  final Map<String, dynamic> waterUsage;
+
+  DemplotAnalyticsModel({
+    required this.soilHealthScore,
+    required this.soilHealthStatus,
+    required this.extremes,
+    required this.npkTrends,
+    required this.waterUsage,
+  });
+
+  factory DemplotAnalyticsModel.fromJson(Map<String, dynamic> json) {
+    return DemplotAnalyticsModel(
+      soilHealthScore: json['soilHealthScore'] ?? 0,
+      soilHealthStatus: json['soilHealthStatus'] ?? 'Unknown',
+      extremes: json['extremes'] ?? {},
+      npkTrends: json['npkTrends'] ?? {},
+      waterUsage: json['waterUsage'] ?? {},
     );
   }
 }

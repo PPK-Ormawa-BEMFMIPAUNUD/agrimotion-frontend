@@ -394,10 +394,9 @@ class SensorService {
     }
   }
 
-  Future<List<CorrelationPointModel>> fetchCorrelationAnalytics(dynamic demplotId, String period) async {
+  Future<DemplotAnalyticsModel?> fetchDemplotAnalytics(int demplotId, {String period = '7d'}) async {
     try {
-      final parsedDemplotId = int.tryParse(demplotId.toString()) ?? 0;
-      final endpoint = ApiConstants.analyticsCorrelationEndpoint(parsedDemplotId, period);
+      final endpoint = ApiConstants.demplotAnalyticsEndpoint(demplotId, period: period);
       final headers = await _getHeaders();
       final response = await _client
           .get(Uri.parse(endpoint), headers: headers)
@@ -405,23 +404,71 @@ class SensorService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        final dynamic rawData = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-        if (rawData == null || (rawData is List && rawData.isEmpty)) {
-          return [];
-        }
-        if (rawData is List) {
-          return rawData
-              .whereType<Map<String, dynamic>>()
-              .map((e) => CorrelationPointModel.fromJson(e))
-              .toList();
-        }
-        return [];
-      } else {
-        // Return empty list on non-200 to prevent throwing raw 400 error dialogs
-        return [];
+        final dynamic data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        if (data == null) return null;
+        return DemplotAnalyticsModel.fromJson(data);
       }
-    } catch (e) {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<FarmActivityModel>> fetchActivities({required int demplotId, String? type, int limit = 20}) async {
+    try {
+      final uri = Uri.parse(ApiConstants.activitiesEndpoint).replace(queryParameters: {
+        'demplotId': demplotId.toString(),
+        if (type != null && type.isNotEmpty && type != 'Semua') 'type': type,
+        'limit': limit.toString(),
+      });
+      final headers = await _getHeaders();
+      final response = await _client.get(uri, headers: headers).timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final rawData = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        if (rawData is List) {
+          return rawData.whereType<Map<String, dynamic>>().map((e) => FarmActivityModel.fromJson(e)).toList();
+        }
+      }
       return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<FarmActivitySummaryModel?> fetchActivitySummary(int demplotId) async {
+    try {
+      final endpoint = ApiConstants.activitySummaryEndpoint(demplotId);
+      final headers = await _getHeaders();
+      final response = await _client.get(Uri.parse(endpoint), headers: headers).timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final dynamic data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        if (data == null) return null;
+        return FarmActivitySummaryModel.fromJson(data);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> createActivity(Map<String, dynamic> payload) async {
+    try {
+      final uri = Uri.parse(ApiConstants.activitiesEndpoint);
+      final headers = await _getHeaders(requiresAuth: true);
+      final response = await _client
+          .post(uri, headers: headers, body: jsonEncode(payload))
+          .timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 
