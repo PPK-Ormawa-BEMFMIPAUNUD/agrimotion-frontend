@@ -61,6 +61,15 @@ class ApiConstants {
     return '$base/api/activities';
   }
 
+  static String demplotReportEndpoint(int demplotId, {String period = 'weekly', String? cropCycleId}) {
+    final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+    String url = '$base/api/reports/demplot/$demplotId?period=$period';
+    if (cropCycleId != null) {
+      url += '&cropCycleId=$cropCycleId';
+    }
+    return url;
+  }
+
   static String activitySummaryEndpoint(int demplotId) {
     final base = baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
     return '$base/api/activities/summary/$demplotId';

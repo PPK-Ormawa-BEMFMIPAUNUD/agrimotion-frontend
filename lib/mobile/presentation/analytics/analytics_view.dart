@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/analytics_model.dart';
-import '../../../core/services/sensor_service.dart';
-import '../../../core/utils/analytics_pdf_generator.dart';
 import '../../../core/models/crop_cycle_model.dart';
+import '../../../core/services/sensor_service.dart';
 import '../../../core/services/crop_cycle_service.dart';
+import '../../../core/utils/analytics_pdf_generator.dart';
+import 'widgets/report_period_dialog.dart';
 import 'widgets/soil_health_card.dart';
 import 'widgets/daily_extremes_card.dart';
 import 'widgets/treatment_activity_section.dart';
@@ -131,31 +132,51 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   }
 
   Future<void> _exportData() async {
-    if (_overviewData == null || _demplotAnalyticsData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tunggu hingga semua data selesai dimuat sebelum ekspor.')),
-      );
-      return;
-    }
+    final String? selectedPeriod = await showDialog<String>(
+      context: context,
+      builder: (ctx) => ReportPeriodDialog(
+        demplotId: _demplotId,
+        demplotName: _demplotName,
+        commodity: _activeCropCycle?.commodityName ?? 'Lahan Bera',
+      ),
+    );
+
+    if (selectedPeriod == null || !mounted) return;
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(color: AppTheme.primaryColor),
+      ),
+    );
 
     try {
-      await AnalyticsPdfGenerator.generateAndPrintReport(
-        demplotName: _demplotName,
-        period: _selectedPeriod,
-        overview: _overviewData!,
-        demplotAnalytics: _demplotAnalyticsData!,
-        activities: _activitiesData,
-        activeCropCycle: _activeCropCycle,
+      final String? cycleId = selectedPeriod == 'cycle' ? _activeCropCycle?.id : null;
+      final reportData = await _sensorService.fetchDemplotReport(
+        _demplotId,
+        period: selectedPeriod,
+        cropCycleId: cycleId,
       );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal membuat laporan PDF: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      if (reportData == null) {
+        throw Exception('Gagal mengambil data laporan dari server.');
       }
+
+      await AnalyticsPdfGenerator.generateAndPrintReport(reportData);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading if error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal membuat laporan PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

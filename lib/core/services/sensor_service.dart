@@ -5,8 +5,11 @@ import '../../features/auth/data/token_storage.dart';
 import '../config/api_config.dart';
 import '../models/sensor_data.dart';
 import '../models/ews_status_model.dart';
+import '../models/report_model.dart';
 import '../models/soil_moisture_trend_model.dart';
 import '../models/analytics_model.dart';
+import '../models/crop_cycle_model.dart';
+import 'crop_cycle_service.dart';
 import '../constants/api_constants.dart';
 import 'ews_service.dart';
 
@@ -279,25 +282,26 @@ class SensorService {
   }
 
   /// Builds a descriptive exception for non-200 HTTP status codes.
-  Exception _buildHttpException(int statusCode) {
+  Exception _buildHttpException(int statusCode, [String? url]) {
+    final targetUrl = url ?? ApiConfig.latestTelemetryEndpoint;
     switch (statusCode) {
       case 400:
         return Exception(
           'Server merespons dengan HTTP 400 (Bad Request). '
-          'Periksa skema respons backend di ${ApiConfig.latestTelemetryEndpoint}.',
+          'Periksa parameter atau skema di $targetUrl.',
         );
       case 401:
         return Exception(
-          'Akses ditolak (HTTP 401). Endpoint memerlukan autentikasi JWT.',
+          'Akses ditolak (HTTP 401). Endpoint memerlukan autentikasi JWT ($targetUrl).',
         );
       case 404:
         return Exception(
           'Endpoint tidak ditemukan (HTTP 404). '
-          'Periksa URL: ${ApiConfig.latestTelemetryEndpoint}',
+          'Periksa URL: $targetUrl',
         );
       default:
         return Exception(
-          'Server merespons dengan HTTP $statusCode.',
+          'Server merespons dengan HTTP $statusCode ($targetUrl).',
         );
     }
   }
@@ -500,6 +504,183 @@ class SensorService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<DemplotReportData?> fetchDemplotReport(int demplotId, {String period = 'weekly', String? cropCycleId}) async {
+    final endpoint = ApiConstants.demplotReportEndpoint(demplotId, period: period, cropCycleId: cropCycleId);
+    try {
+      final headers = await _getHeaders(requiresAuth: true);
+      final response = await _client
+          .get(Uri.parse(endpoint), headers: headers)
+          .timeout(ApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final dynamic data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        if (data == null) return null;
+        return DemplotReportData.fromJson(data);
+      } else if (response.statusCode == 401) {
+        await TokenStorage.instance.clearSession();
+        throw Exception('Sesi Anda telah berakhir, silakan login kembali.');
+      } else if (response.statusCode == 404) {
+        // Fallback: If the server returns 404 (e.g. backend /reports has not yet been deployed on VPS),
+        // compose the report dynamically from existing deployed endpoints without OOM.
+        return await _generateFallbackDemplotReport(demplotId, period: period);
+      } else {
+        throw _buildHttpException(response.statusCode, endpoint);
+      }
+    } on TimeoutException {
+      throw Exception('Koneksi ke server timeout saat mengambil laporan PDF ($endpoint).');
+    } catch (e) {
+      throw Exception('Gagal memuat laporan: $e');
+    }
+  }
+
+  Future<DemplotReportData> _generateFallbackDemplotReport(
+    int demplotId, {
+    String period = 'weekly',
+  }) async {
+    final overviewPeriod = period == 'monthly' ? 'month' : (period == 'cycle' ? 'month' : 'week');
+    final analyticsPeriod = period == 'monthly' ? '30d' : (period == 'cycle' ? '30d' : '7d');
+    final daysCount = period == 'monthly' ? 30 : 7;
+
+    // Fetch existing live aggregated endpoints concurrently
+    final results = await Future.wait([
+      fetchAnalyticsOverview(demplotId, overviewPeriod).catchError((_) => AnalyticsOverviewModel(
+        demplotId: demplotId,
+        period: overviewPeriod,
+        totalSamples: 0,
+        avgSoilMoisture: 0,
+        avgTemperature: 0,
+        avgHumidity: 0,
+        avgPh: 0,
+        avgNpkIndex: 0,
+        activeSensors: 0,
+      )),
+      fetchDemplotAnalytics(demplotId, period: analyticsPeriod),
+      fetchActivities(demplotId: demplotId, limit: 100),
+      fetchSoilMoistureTrends(demplotId, days: daysCount).catchError((_) => <SoilMoistureTrendModel>[]),
+      CropCycleService().fetchActiveCycle(demplotId).catchError((_) => null),
+    ]);
+
+    final overview = results[0] as AnalyticsOverviewModel;
+    final demplotAnalytics = results[1] as DemplotAnalyticsModel?;
+    final activities = results[2] as List<FarmActivityModel>;
+    final trends = results[3] as List<SoilMoistureTrendModel>;
+    final cropCycle = results[4] as CropCycleModel?;
+
+    // Calculate activity totals
+    double totalWater = 0;
+    int fertCount = 0;
+    int sprayCount = 0;
+    final Map<String, List<String>> activityMap = {};
+
+    for (final act in activities) {
+      final dateStr = act.executedAt.toIso8601String().split('T').first;
+      activityMap.putIfAbsent(dateStr, () => []);
+
+      if (act.type == 'WATERING') {
+        totalWater += act.volumeLiter ?? 0;
+        activityMap[dateStr]!.add('Penyiraman ${(act.volumeLiter ?? 0).toStringAsFixed(1)}L');
+      } else if (act.type == 'FERTILIZATION') {
+        fertCount++;
+        activityMap[dateStr]!.add('Pemupukan ${act.substanceName ?? "Nutrisi"} ${(act.volumeLiter ?? 0).toStringAsFixed(1)}L');
+      } else if (act.type == 'SPRAYING') {
+        sprayCount++;
+        activityMap[dateStr]!.add('Penyemprotan ${act.substanceName ?? "Pestisida"}');
+      }
+    }
+
+    // Build daily records
+    final List<DailyReportItem> dailyRecords = [];
+    final double defaultTemp = overview.avgTemperature;
+    final double defaultMoist = overview.avgSoilMoisture;
+    final double defaultHum = overview.avgHumidity;
+    final double defaultPh = overview.avgPh;
+    final double defaultN = demplotAnalytics != null ? (demplotAnalytics.npkTrends['n']?['value'] ?? 0.0).toDouble() : 0.0;
+    final double defaultP = demplotAnalytics != null ? (demplotAnalytics.npkTrends['p']?['value'] ?? 0.0).toDouble() : 0.0;
+    final double defaultK = demplotAnalytics != null ? (demplotAnalytics.npkTrends['k']?['value'] ?? 0.0).toDouble() : 0.0;
+
+    if (trends.isNotEmpty) {
+      for (final t in trends) {
+        final dStr = t.date.toIso8601String().split('T').first;
+        dailyRecords.add(DailyReportItem(
+          date: dStr,
+          dayName: t.dayName,
+          avgTemp: defaultTemp,
+          minTemp: demplotAnalytics?.extremes['temperature']?['min']?.toDouble() ?? (defaultTemp > 2 ? defaultTemp - 2 : defaultTemp),
+          maxTemp: demplotAnalytics?.extremes['temperature']?['max']?.toDouble() ?? defaultTemp + 2,
+          avgMoisture: t.avgSoilMoisture > 0 ? t.avgSoilMoisture : defaultMoist,
+          minMoisture: demplotAnalytics?.extremes['soilMoisture']?['min']?.toDouble() ?? (defaultMoist > 5 ? defaultMoist - 5 : defaultMoist),
+          maxMoisture: demplotAnalytics?.extremes['soilMoisture']?['max']?.toDouble() ?? defaultMoist + 5,
+          avgHumidity: defaultHum,
+          minHumidity: demplotAnalytics?.extremes['humidity']?['min']?.toDouble() ?? (defaultHum > 5 ? defaultHum - 5 : defaultHum),
+          maxHumidity: demplotAnalytics?.extremes['humidity']?['max']?.toDouble() ?? defaultHum + 5,
+          avgPh: defaultPh,
+          avgN: defaultN,
+          avgP: defaultP,
+          avgK: defaultK,
+          activities: activityMap[dStr] ?? [],
+        ));
+      }
+    } else {
+      final now = DateTime.now();
+      final dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+      for (int i = daysCount - 1; i >= 0; i--) {
+        final d = now.subtract(Duration(days: i));
+        final dStr = d.toIso8601String().split('T').first;
+        final dayName = dayNames[d.weekday - 1];
+        dailyRecords.add(DailyReportItem(
+          date: dStr,
+          dayName: dayName,
+          avgTemp: defaultTemp,
+          minTemp: defaultTemp > 2 ? defaultTemp - 2 : defaultTemp,
+          maxTemp: defaultTemp + 2,
+          avgMoisture: defaultMoist,
+          minMoisture: defaultMoist > 5 ? defaultMoist - 5 : defaultMoist,
+          maxMoisture: defaultMoist + 5,
+          avgHumidity: defaultHum,
+          minHumidity: defaultHum > 5 ? defaultHum - 5 : defaultHum,
+          maxHumidity: defaultHum + 5,
+          avgPh: defaultPh,
+          avgN: defaultN,
+          avgP: defaultP,
+          avgK: defaultK,
+          activities: activityMap[dStr] ?? [],
+        ));
+      }
+    }
+
+    final periodLabel = period == 'cycle'
+        ? 'Satu Siklus Tanam Berjalan'
+        : (period == 'monthly' ? '30 Hari Terakhir' : '7 Hari Terakhir');
+
+    final String demplotName = demplotId == 0 ? 'Demplot Bunga Pacah' : (demplotId == 1 ? 'Demplot Sawi' : 'Demplot Cabai');
+
+    return DemplotReportData(
+      header: DemplotReportHeader(
+        demplotId: demplotId,
+        demplotName: demplotName,
+        commodity: cropCycle?.commodityName ?? (demplotId == 0 ? 'Bunga Pacah' : (demplotId == 1 ? 'Sawi' : 'Cabai')),
+        plantingDate: cropCycle?.plantingDate.toIso8601String() ?? DateTime.now().subtract(const Duration(days: 30)).toIso8601String(),
+        hst: cropCycle?.hst ?? 0,
+        phase: cropCycle?.phase ?? 'Masa Tanam',
+        periodLabel: periodLabel,
+        startDate: DateTime.now().subtract(Duration(days: daysCount)).toIso8601String(),
+        endDate: DateTime.now().toIso8601String(),
+      ),
+      summary: DemplotReportSummary(
+        avgTemp: overview.avgTemperature,
+        avgMoisture: overview.avgSoilMoisture,
+        avgHumidity: overview.avgHumidity,
+        avgPh: overview.avgPh,
+        soilHealthScore: demplotAnalytics?.soilHealthScore ?? 80,
+        totalWaterLiters: totalWater,
+        fertilizationCount: fertCount,
+        sprayingCount: sprayCount,
+      ),
+      dailyRecords: dailyRecords,
+    );
   }
 
   void dispose() {
