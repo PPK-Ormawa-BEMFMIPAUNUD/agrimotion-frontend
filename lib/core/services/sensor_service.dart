@@ -47,9 +47,11 @@ class SensorService {
   Future<Map<String, String>> _getHeaders({bool requiresAuth = false}) async {
     final headers = Map<String, String>.from(_antiCacheHeaders);
     headers['Content-Type'] = 'application/json';
-    final token = await TokenStorage.instance.getToken();
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
+    if (requiresAuth) {
+      final token = await TokenStorage.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
     }
     return headers;
   }
@@ -509,7 +511,7 @@ class SensorService {
   Future<DemplotReportData?> fetchDemplotReport(int demplotId, {String period = 'weekly', String? cropCycleId}) async {
     final endpoint = ApiConstants.demplotReportEndpoint(demplotId, period: period, cropCycleId: cropCycleId);
     try {
-      final headers = await _getHeaders(requiresAuth: true);
+      final headers = await _getHeaders(requiresAuth: false);
       final response = await _client
           .get(Uri.parse(endpoint), headers: headers)
           .timeout(ApiConfig.requestTimeout);
@@ -519,12 +521,12 @@ class SensorService {
         final dynamic data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
         if (data == null) return null;
         return DemplotReportData.fromJson(data);
-      } else if (response.statusCode == 401) {
-        await TokenStorage.instance.clearSession();
-        throw Exception('Sesi Anda telah berakhir, silakan login kembali.');
-      } else if (response.statusCode == 404) {
-        // Fallback: If the server returns 404 (e.g. backend /reports has not yet been deployed on VPS),
+      } else if (response.statusCode == 401 || response.statusCode == 404) {
+        // Fallback: If 401 (stale/expired session) or 404 (endpoint not yet deployed),
         // compose the report dynamically from existing deployed endpoints without OOM.
+        if (response.statusCode == 401) {
+          await TokenStorage.instance.clearSession();
+        }
         return await _generateFallbackDemplotReport(demplotId, period: period);
       } else {
         throw _buildHttpException(response.statusCode, endpoint);
